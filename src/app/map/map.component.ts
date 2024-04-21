@@ -28,17 +28,25 @@ export class MapComponent implements OnInit {
     mapboxgl.accessToken = environment.mapToken;
     this.map = new mapboxgl.Map({
       container: 'map',
-      style: 'mapbox://styles/mapbox/streets-v11',
+      style: 'mapbox://styles/mrsolarius/clv7zpye900n101qzevxn3alm',
       projection: {
         name: 'globe',
-      }
+      },
+      zoom: 1,
     });
     this.map.on('load', () => {
       this.mapService.getCoordinates().subscribe(data => {
         this.addPath(data)
-        this.addTimeOverlay(data)
-        this.centerMapAndZoom(data)
+        //this.addTimeOverlay(data)
+        setTimeout(() => {
+          const bounds = this.getBounds(data)
+          this.centerMapAndZoom(bounds)
+          setTimeout(() => {
+            this.turnAround(bounds)
+          }, 10000)
+        }, 1500)
       })
+      this.addSky();
       this.addTerrain();
     });
   }
@@ -46,21 +54,53 @@ export class MapComponent implements OnInit {
   addTerrain() {
     this.map!.addSource('mapbox-dem', {
       'type': 'raster-dem',
-      'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+      'url': 'mapbox://styles/mrsolarius/clv7zpye900n101qzevxn3alm',
       'tileSize': 512,
       'maxzoom': 14
     });
     this.map!.setTerrain({'source': 'mapbox-dem', 'exaggeration': 2});
   }
 
-  private centerMapAndZoom(coordinates: CoordinateDTO[]) {
+  private getBounds(coordinates: CoordinateDTO[]): mapboxgl.LngLatBounds {
     const bounds = new mapboxgl.LngLatBounds();
     coordinates.forEach(coordinate => {
       bounds.extend([coordinate.longitude, coordinate.latitude]);
     });
-    this.map!.fitBounds(bounds, {
-      padding: 20
+    return bounds;
+  }
+
+  private centerMapAndZoom(bounds: mapboxgl.LngLatBounds) {
+      this.map!.fitBounds(bounds, {
+        padding: 20,
+        duration: 10000,
+        curve: 1.42,
+      })
+  }
+
+  private turnAround(bounds: mapboxgl.LngLatBounds) {
+    this.map!.easeTo({
+      center: bounds.getCenter(),
+      pitch: 60,
+      bearing: 180, // Ajoutez cette ligne pour faire pivoter la carte de 360 degrés
+      duration: 10000, // Modifiez cette ligne pour contrôler la durée de la rotation
+      easing(t: number) {
+        // ease in function that finishes with t=1
+        return t * t * t * t;
+      }
     });
+    // go to the next frame
+    setTimeout(() => {
+      this.map!.easeTo({
+        center: bounds.getCenter(),
+        pitch: 60,
+        bearing: 349, // Ajoutez cette ligne pour faire pivoter la carte de 360 degrés
+        duration: 10000, // Modifiez cette ligne pour contrôler la durée de la rotation,
+        easing(t: number) {
+          // ease out function
+          return 1 - (--t) * t * t * t;
+        }
+      });
+    }, 10000)
   }
 
   private addPath(coordinates: CoordinateDTO[]) {
@@ -89,7 +129,7 @@ export class MapComponent implements OnInit {
     });
   }
 
-  private addTimeOverlay(data: CoordinateDTO[]) {
+  /*private addTimeOverlay(data: CoordinateDTO[]) {
     // when mouse hover the path, show the time of the most close point
     this.map!.on('mousemove', 'path', (e) => {
 
@@ -104,6 +144,16 @@ export class MapComponent implements OnInit {
         // Hide tooltip when not hovering over the path
         this.map!.getCanvas().style.cursor = '';
       }
+    });
+  }*/
+
+  private addSky() {
+    this.map!.setFog({
+      color: 'rgb(186, 210, 235)', // Lower atmosphere
+      'high-color': 'rgb(36, 92, 223)', // Upper atmosphere
+      'horizon-blend': 0.02, // Atmosphere thickness (default 0.2 at low zooms)
+      'space-color': 'rgb(11, 11, 25)', // Background color
+      'star-intensity': 0.6 // Background star brightness (default 0.35 at low zoooms )
     });
   }
 }
