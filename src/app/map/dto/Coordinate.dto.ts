@@ -1,3 +1,5 @@
+import {Coordinate} from "mapbox-gl";
+
 export interface CoordinateObjsDTO {
   id: number;
   date: string;
@@ -7,9 +9,9 @@ export interface CoordinateObjsDTO {
   updated_at: string;
 }
 
-export interface CoordinateDTO {
+export interface CoordinateDto {
   id: number;
-  date: string;
+  date: Date;
   latitude: number;
   longitude: number;
   created_at: string;

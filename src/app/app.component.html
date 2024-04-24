@@ -1,1 +1,9 @@
-<app-map></app-map>
+<main class="page-struct">
+  <section class="map">
+  <app-map (photosClick)="photoSelected($event)" [photoHovered]="photoHovered"></app-map>
+  </section>
+  <section class="right-panel mat-body">
+    <app-main></app-main>
+    <app-gallery [selectedPhoto]="selectedPhoto" (photoHover)="photoHover($event)"></app-gallery>
+  </section>
+</main>
