@@ -1,0 +1,23 @@
+@if(isBrowser) {
+  <div class="images" [photoGalleryGroup]="{ arrowEl: true, indexIndicatorSep: ' - ',index: selectedIndex,  }" (onPhotoGalleryInit)="galleryinit($event)" >
+    @if ((picturesObs|async); as pictures) {
+      @for (pict of pictures; track pict.id; let index = $index) {
+        @if (index===0 || pictures[index-1].date.getDay()!==pict.date.getDay()) {
+          <div class="date">{{ pict.date.toLocaleDateString('fr-FR',{ weekday: 'short', day: '2-digit', month: 'short' }) }}</div>
+        }
+        <a class="image" href="#" [attr.id]="pict.id" [photoGallery]="getPituresUrl(pict,'raw')"
+              (mouseover)="imageHover(pict)"
+             [ngClass]="pict.width > pict.height ? 'landscape' : 'portrait'">
+          <picture>
+            <source [srcset]="getPituresUrl(pict,'raw')" media="(min-width: 2160px)">
+            <source [srcset]="getPituresUrl(pict,'xl')" media="(min-width: 1600px)">
+            <source [srcset]="getPituresUrl(pict,'l')" media="(min-width: 1080px)">
+            <source [srcset]="getPituresUrl(pict,'m')" media="(min-width: 768px)">
+            <source [srcset]="getPituresUrl(pict,'xs')" media="(min-width: 375px)">
+            <img [src]="getPituresUrl(pict,'xxs')">
+          </picture>
+        </a>
+      }
+    }
+  </div>
+}
