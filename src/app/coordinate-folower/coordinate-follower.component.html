@@ -1,0 +1,56 @@
+@if(isBrowser) {
+  <div class="form-container">
+  <mat-checkbox (change)="cameraFollowChanged($event)" [checked]="true" color="primary">Activer le suivit de la caméra
+  </mat-checkbox>
+  <mat-slider class="slider" min="0" [max]="coordinates.length-1" step="1" [displayWith]="formatLabel.bind(this)">
+    <input matSliderThumb [(ngModel)]="selectedCoordinate" (valueChange)="onSliderChange($event)">
+  </mat-slider>
+  </div>
+  <div class="weather-container">
+    @if (weatherData) {
+      <img class="weather-icon" [src]="'/assets/animated/' + weatherIconMap[weatherData.weather[0].id!] "
+           alt="Weather icon">
+    } @else {
+      <img class="weather-icon" [src]="'/assets/animated/'+ getDayOrNight(coordinates[selectedCoordinate].date)+'.svg'"
+           alt="Weather icon">
+    }
+    <div class="date-container">
+      <h2 class="day-name">{{
+          coordinates[selectedCoordinate].date.toLocaleDateString('fr-FR', {
+            weekday: 'long',
+            day: '2-digit',
+            month: 'long',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          })
+        }}</h2>
+      <div class="ico-container">
+        <mat-icon color="primary">satellite_alt</mat-icon>
+        <span>&nbsp;lat: {{ coordinates[selectedCoordinate].latitude }}
+          long:{{ coordinates[selectedCoordinate].longitude }}</span>
+      </div>
+      @if (weatherData) {
+        <div class="ico-container">
+          <mat-icon color="primary">location_on</mat-icon>
+          <span>&nbsp;{{ weatherData.name }}</span>
+        </div>
+      }
+    </div>
+  </div>
+  <div class="spacer"></div>
+  @if (weatherData) {
+    <div class="big-weather-metrics">
+      <div class="metric-container">
+        <mat-icon class="metric-icon" color="primary">thermostat</mat-icon>
+        <span class="metric-value">{{ weatherData.main.temp }}°C</span>
+      </div>
+      <div class="metric-container">
+        <mat-icon class="metric-icon" color="primary">opacity</mat-icon>
+        <span class="metric-value">{{ weatherData.main.humidity }}%</span>
+      </div>
+    </div>
+  }
+
+  <div class="spacer"></div>
+}

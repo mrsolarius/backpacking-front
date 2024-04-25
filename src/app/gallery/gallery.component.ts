@@ -10,7 +10,6 @@ import {PhotoGalleryModule} from "@twogate/ngx-photo-gallery";
   standalone: true,
   imports: [
     AsyncPipe,
-    NgOptimizedImage,
     CommonModule,
     PhotoGalleryModule
   ],
@@ -59,7 +58,7 @@ export class GalleryComponent {
   }
 
   galleryinit($event: any) {
-    
+
   }
 }
 

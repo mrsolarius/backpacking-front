@@ -9,19 +9,23 @@ import {
   ViewChild,
   ViewEncapsulation
 } from '@angular/core';
-import mapboxgl from "mapbox-gl";
+import mapboxgl, {LngLat} from "mapbox-gl";
 import {isPlatformBrowser} from "@angular/common";
 import {environment} from "../../environments/environment";
 import {CoordinateDto} from "./dto/Coordinate.dto";
 import {MapDataService} from "./map-data.service";
 import {Position} from "geojson";
 import {GalleryService} from "../gallery/gallery.service";
-import { PictureCoordinateDTO} from "../gallery/images.dto";
+import {PictureCoordinateDTO} from "../gallery/images.dto";
+import {MatProgressSpinner} from "@angular/material/progress-spinner";
+import {CameraFollow} from "../coordinate-folower/coordinate-follower.component";
 
 @Component({
   selector: 'app-map',
   standalone: true,
-  imports: [],
+  imports: [
+    MatProgressSpinner
+  ],
   templateUrl: './map.component.html',
   styleUrl: './map.component.scss',
   encapsulation: ViewEncapsulation.None
@@ -29,9 +33,13 @@ import { PictureCoordinateDTO} from "../gallery/images.dto";
 export class MapComponent implements OnInit {
   private readonly isServer: boolean;
   private map?: mapboxgl.Map;
+  private meMarker!: mapboxgl.Marker;
+  isLoading = true;
 
   @Output()
   photosClick = new EventEmitter<PictureCoordinateDTO>();
+
+  private me!: HTMLDivElement;
 
   @Input()
   set photoHovered(value: PictureCoordinateDTO | undefined) {
@@ -47,12 +55,58 @@ export class MapComponent implements OnInit {
     }
   }
 
+  @Input()
+  set selectedCoordinate(value: CoordinateDto | undefined) {
+    if (value) {
+      if (this.cameraFollow === CameraFollow.ON) {
+        this.map!.easeTo({
+          center: [value.longitude, value.latitude],
+          zoom: 16,
+          duration: 1000,
+          pitch: 20,
+        });
+      }
+      this.moveMarkerSmoothly(this.meMarker, new LngLat(value.longitude, value.latitude), 100);
+
+    }
+  }
+
+  moveMarkerSmoothly(marker: mapboxgl.Marker, target: mapboxgl.LngLat, duration: number) {
+    const start = performance.now();
+    const startPosition = marker.getLngLat();
+    const deltaPosition = {
+      lng: target.lng - startPosition.lng,
+      lat: target.lat - startPosition.lat
+    };
+
+    const animateMarker = (current: number) => {
+      const elapsed = (current - start) / duration; // Normalized time (0 to 1)
+
+      if (elapsed <= 1) {
+        // Calculate the current position
+        const lng = startPosition.lng + deltaPosition.lng * elapsed;
+        const lat = startPosition.lat + deltaPosition.lat * elapsed;
+        marker.setLngLat([lng, lat]);
+
+        // Request the next frame
+        requestAnimationFrame(animateMarker);
+      } else {
+        // Ensure the marker is exactly at the target position
+        marker.setLngLat(target);
+      }
+    };
+
+    // Start the animation
+    requestAnimationFrame(animateMarker);
+  }
+
+
+  @Input()
+  cameraFollow: CameraFollow = CameraFollow.ON;
+
   private markers: { [id: number]: mapboxgl.Marker } = {};
 
-  @ViewChild('me')
-  me: ElementRef | undefined;
-
-  constructor(@Inject(PLATFORM_ID) private platformId: Object, private mapService: MapDataService, private galleryService:GalleryService) {
+  constructor(@Inject(PLATFORM_ID) private platformId: Object, private mapService: MapDataService, private galleryService: GalleryService) {
     this.isServer = !isPlatformBrowser(platformId);
   }
 
@@ -70,6 +124,7 @@ export class MapComponent implements OnInit {
       zoom: 1,
     });
     this.map.on('load', () => {
+      this.isLoading = false;
       this.mapService.getCoordinates().subscribe(data => {
         this.addIconAtLastCoordinate(data, 'assets/me.jpg');
         this.addPath(data)
@@ -109,11 +164,11 @@ export class MapComponent implements OnInit {
   }
 
   private centerMapAndZoom(bounds: mapboxgl.LngLatBounds, duration: number = 10000, padding: number = 20) {
-      this.map!.fitBounds(bounds, {
-        padding,
-        duration,
-        curve: 1.42,
-      })
+    this.map!.fitBounds(bounds, {
+      padding,
+      duration,
+      curve: 1.42,
+    })
   }
 
 
@@ -123,111 +178,96 @@ export class MapComponent implements OnInit {
       pitch: 60,
       bearing: 180, // Ajoutez cette ligne pour faire pivoter la carte de 360 degrés
       duration: 10000, // Modifiez cette ligne pour contrôler la durée de la rotation
-      easing(t: number) {
-        // ease in function that finishes with t=1
-        return t * t * t * t;
-      }
     });
-    // go to the next frame
-    setTimeout(() => {
-      this.map!.easeTo({
-        center: bounds.getCenter(),
-        pitch: 60,
-        bearing: 349, // Ajoutez cette ligne pour faire pivoter la carte de 360 degrés
-        duration: 10000, // Modifiez cette ligne pour contrôler la durée de la rotation,
-        easing(t: number) {
-          // ease out function
-          return 1 - (--t) * t * t * t;
-        }
-      });
-    }, 10000)
+
   }
 
   private addPath(coordinates: CoordinateDto[]) {
-  // Calculate min and max dates
-  const sortedCoordinates = coordinates.sort((a, b) => a.date.getTime() - b.date.getTime());
+    // Calculate min and max dates
+    const sortedCoordinates = coordinates.sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  this.map!.addSource('path', {
-    'type': 'geojson',
-    'lineMetrics': true,
-    'data': {
-      'type': 'Feature',
-      'properties': {},
-      'geometry': {
-        'type': 'LineString',
-        'coordinates': sortedCoordinates.map(c => [c.longitude, c.latitude])
+    this.map!.addSource('path', {
+      'type': 'geojson',
+      'lineMetrics': true,
+      'data': {
+        'type': 'Feature',
+        'properties': {},
+        'geometry': {
+          'type': 'LineString',
+          'coordinates': sortedCoordinates.map(c => [c.longitude, c.latitude])
+        }
       }
-    }
-  });
-
-  this.map!.addLayer({
-    'id': 'path',
-    'type': 'line',
-    'source': 'path',
-    'layout': {
-      'line-join': 'round',
-      'line-cap': 'round'
-    },
-    'paint': {
-      'line-width': 8,
-      'line-gradient': [
-        'interpolate',
-        ['linear'],
-        ['line-progress'],
-        0, "rgba(23, 127, 253, 0.2)",
-        1,  "rgba(23, 127, 253, 1)"
-      ]
-    }
-  });
-}
-
-private addIconAtLastCoordinate(coordinates: CoordinateDto[], imagePath: string) {
-
-    const lastCoordinate = coordinates[coordinates.length - 1];
-
-    // Add the marker to the map at the last coordinate
-    new mapboxgl.Marker(this.me!.nativeElement)
-      .setLngLat([lastCoordinate.longitude, lastCoordinate.latitude])
-      .addTo(this.map!);
-}
-
-private addMarkers(coordinates: PictureCoordinateDTO[]) {
-  coordinates.forEach(coordinate => {
-    const el = document.createElement('div');
-    el.className = 'marker';
-    el.style.backgroundImage = "url('https://api.backpaking.louisvolat.fr/storage/" + coordinate.path + "/dot.webp')";
-
-
-    const marker = new mapboxgl.Marker(el)
-      .setLngLat([coordinate.longitude, coordinate.latitude])
-      .addTo(this.map!);
-
-    this.markers[coordinate.id] = marker;
-
-    el.addEventListener('click', () => {
-      this.updateMarkerSize(coordinate.id);
-      this.photosClick.emit(coordinate);
     });
 
-  });
-}
+    this.map!.addLayer({
+      'id': 'path',
+      'type': 'line',
+      'source': 'path',
+      'layout': {
+        'line-join': 'round',
+        'line-cap': 'round'
+      },
+      'paint': {
+        'line-width': 8,
+        'line-gradient': [
+          'interpolate',
+          ['linear'],
+          ['line-progress'],
+          0, "rgba(23, 127, 253, 0.2)",
+          1, "rgba(23, 127, 253, 1)"
+        ]
+      }
+    });
+  }
 
-private updateMarkerSize(id: number | null) {
-  Object.entries(this.markers).forEach(([markerId, marker]) => {
-    const el = marker.getElement();
-    if (parseInt(markerId) === id) {
-      el.style.width = '60px';
-      el.style.height = '60px';
-      el.style.borderRadius = '35%';
-      el.style.zIndex = '1000';
-    } else {
-      el.style.width = '30px';
-      el.style.height = '30px';
-      el.style.borderRadius = '50%';
-      el.style.zIndex = 'unset';
-    }
-  });
-}
+  private addIconAtLastCoordinate(coordinates: CoordinateDto[], imagePath: string) {
+
+    const lastCoordinate = coordinates[coordinates.length - 1];
+    this.me = document.createElement('div');
+    this.me.className = 'me-marker';
+    // Add the marker to the map at the last coordinate
+    this.meMarker = new mapboxgl.Marker(this.me)
+      .setLngLat([lastCoordinate.longitude, lastCoordinate.latitude])
+      .addTo(this.map!);
+  }
+
+  private addMarkers(coordinates: PictureCoordinateDTO[]) {
+    coordinates.forEach(coordinate => {
+      const el = document.createElement('div');
+      el.className = 'marker';
+      el.style.backgroundImage = "url('https://api.backpaking.louisvolat.fr/storage/" + coordinate.path + "/dot.webp')";
+
+
+      const marker = new mapboxgl.Marker(el)
+        .setLngLat([coordinate.longitude, coordinate.latitude])
+        .addTo(this.map!);
+
+      this.markers[coordinate.id] = marker;
+
+      el.addEventListener('click', () => {
+        this.updateMarkerSize(coordinate.id);
+        this.photosClick.emit(coordinate);
+      });
+
+    });
+  }
+
+  private updateMarkerSize(id: number | null) {
+    Object.entries(this.markers).forEach(([markerId, marker]) => {
+      const el = marker.getElement();
+      if (parseInt(markerId) === id) {
+        el.style.width = '60px';
+        el.style.height = '60px';
+        el.style.borderRadius = '35%';
+        el.style.zIndex = '1000';
+      } else {
+        el.style.width = '30px';
+        el.style.height = '30px';
+        el.style.borderRadius = '50%';
+        el.style.zIndex = 'unset';
+      }
+    });
+  }
 
   /*private addTimeOverlay(data: CoordinateDto[]) {
     // when mouse hover the path, show the time of the most close point

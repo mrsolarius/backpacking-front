@@ -1,2 +1,6 @@
-<div #me class="me-marker"></div>
+@if(isLoading) {
+  <div class="loading">
+    <mat-spinner></mat-spinner>
+  </div>
+}
 <div #map id="map"></div>

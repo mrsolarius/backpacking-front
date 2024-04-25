@@ -27,6 +27,8 @@
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     z-index: 1;
     overflow: auto;
+    width: calc(100% - 20px);
+    height: 100%;
   }
 }
 
@@ -42,7 +44,7 @@
 
     .right-panel {
       width: 50vw;
-      max-width: 600px;
+      //max-width: 600px;
       max-height: 100vh;
     }
 
@@ -53,4 +55,8 @@
   .right-panel {
     max-width: 800px;
   }
+}
+
+.tab-expand{
+  width: 100%;
 }
