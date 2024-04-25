@@ -8,6 +8,8 @@ import {MatMenu} from "@angular/material/menu";
 import {MatTab, MatTabGroup} from "@angular/material/tabs";
 import {CameraFollow, CoordinateFollowerComponent} from "./coordinate-folower/coordinate-follower.component";
 import {CoordinateDto} from "./map/dto/Coordinate.dto";
+import {ServiceWorkerModule} from "@angular/service-worker";
+import {environment} from "../environments/environment";
 
 const weatherIconMap = {
   '200': 'weather-lightning-rainy', // Thunderstorm with light rain
@@ -70,7 +72,16 @@ const weatherIconMap = {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, MapComponent, MainComponent, GalleryComponent, MatMenu, MatTab, CoordinateFollowerComponent, MatTabGroup],
+  imports: [
+    RouterOutlet,
+    MapComponent,
+    MainComponent,
+    GalleryComponent,
+    MatMenu,
+    MatTab,
+    CoordinateFollowerComponent,
+    MatTabGroup,
+  ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
