@@ -104,13 +104,15 @@ export class CoordinateFollowerComponent {
   weatherData: any;
   isBrowser: boolean;
   constructor(@Inject(PLATFORM_ID) platformId:any,mapDataService: MapDataService, private http: HttpClient) {
-    mapDataService.getCoordinates().pipe(first()).subscribe((coordinates) => {
-      this.coordinates = coordinates;
-      this.selectedCoordinate = this.coordinates.length - 1;
-      this.onSliderChange(this.selectedCoordinate);
-    });
 
     this.isBrowser = isPlatformBrowser(platformId);
+    if(this.isBrowser) {
+      mapDataService.getCoordinates().pipe(first()).subscribe((coordinates) => {
+        this.coordinates = coordinates;
+        this.selectedCoordinate = this.coordinates.length - 1;
+        this.onSliderChange(this.selectedCoordinate);
+      });
+    }
   }
 
   formatLabel(p1: number) {
@@ -119,9 +121,7 @@ export class CoordinateFollowerComponent {
   }
 
   onSliderChange(selectedCoordinate: number) {
-    if(this.isBrowser) {
       this.sliderChange.emit(this.coordinates[selectedCoordinate]);
-    }
     this.getWeatherData(this.coordinates[selectedCoordinate].latitude, this.coordinates[selectedCoordinate].longitude)
       .pipe(first())
       .subscribe(data => {
@@ -142,5 +142,9 @@ export class CoordinateFollowerComponent {
 
   cameraFollowChanged($event: MatCheckboxChange) {
     this.cameraFollowChange.emit($event.checked? CameraFollow.ON : CameraFollow.OFF);
+  }
+
+  getNow() {
+    return new Date()
   }
 }

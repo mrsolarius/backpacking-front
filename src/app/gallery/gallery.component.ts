@@ -4,6 +4,7 @@ import {PictureCoordinateDTO} from "./images.dto";
 import {GalleryService} from "./gallery.service";
 import {first, Observable} from "rxjs";
 import {PhotoGalleryModule} from "@twogate/ngx-photo-gallery";
+import {MatIcon} from "@angular/material/icon";
 
 @Component({
   selector: 'app-gallery',
@@ -11,7 +12,8 @@ import {PhotoGalleryModule} from "@twogate/ngx-photo-gallery";
   imports: [
     AsyncPipe,
     CommonModule,
-    PhotoGalleryModule
+    PhotoGalleryModule,
+    MatIcon
   ],
   templateUrl: './gallery.component.html',
   styleUrl: './gallery.component.scss'

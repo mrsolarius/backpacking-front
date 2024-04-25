@@ -1,21 +1,35 @@
 @if(isBrowser) {
   <div class="images" [photoGalleryGroup]="{ arrowEl: true, indexIndicatorSep: ' - ',index: selectedIndex,  }" (onPhotoGalleryInit)="galleryinit($event)" >
     @if ((picturesObs|async); as pictures) {
-      @for (pict of pictures; track pict.id; let index = $index) {
-        @if (index===0 || pictures[index-1].date.getDay()!==pict.date.getDay()) {
-          <div class="date">{{ pict.date.toLocaleDateString('fr-FR',{ weekday: 'short', day: '2-digit', month: 'short' }) }}</div>
-        }
-        <a class="image" href="#" [attr.id]="pict.id" [photoGallery]="getPituresUrl(pict,'raw')"
-              (mouseover)="imageHover(pict)"
+      @if(pictures.length>0) {
+        @for (pict of pictures; track pict.id; let index = $index) {
+          @if (index === 0 || pictures[index - 1].date.getDay() !== pict.date.getDay()) {
+            <div class="date">{{
+                pict.date.toLocaleDateString('fr-FR', {
+                  weekday: 'short',
+                  day: '2-digit',
+                  month: 'short'
+                })
+              }}
+            </div>
+          }
+          <a class="image" href="#" [attr.id]="pict.id" [photoGallery]="getPituresUrl(pict,'raw')"
+             (mouseover)="imageHover(pict)"
              [ngClass]="pict.width > pict.height ? 'landscape' : 'portrait'">
-          <picture>
-            <source [srcset]="getPituresUrl(pict,'xl')" media="(max-width: 1600px)" type="image/webp">
-            <source [srcset]="getPituresUrl(pict,'l')" media="(max-width: 1080px)" type="image/webp">
-            <source [srcset]="getPituresUrl(pict,'m')" media="(max-width: 500px)" type="image/webp">
-            <source [srcset]="getPituresUrl(pict,'xs')" media="(max-width: 375px)" type="image/webp">
-            <img [src]="getPituresUrl(pict,'m')" loading="lazy" style="width: 100%">
-          </picture>
-        </a>
+            <picture>
+              <source [srcset]="getPituresUrl(pict,'xl')" media="(max-width: 1600px)" type="image/webp">
+              <source [srcset]="getPituresUrl(pict,'l')" media="(max-width: 1080px)" type="image/webp">
+              <source [srcset]="getPituresUrl(pict,'m')" media="(max-width: 500px)" type="image/webp">
+              <source [srcset]="getPituresUrl(pict,'xs')" media="(max-width: 375px)" type="image/webp">
+              <img [src]="getPituresUrl(pict,'m')" loading="lazy" style="width: 100%">
+            </picture>
+          </a>
+        }
+      } @else {
+        <div class="no-img-container">
+          <mat-icon class="no-img-ico" color="primary">landscape</mat-icon>
+          <div class="no-img-text">Aucune photo pour le moment</div>
+        </div>
       }
     }
   </div>

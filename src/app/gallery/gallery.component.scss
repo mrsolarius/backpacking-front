@@ -34,3 +34,23 @@
   }
 
 }
+
+.no-img-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%; // Adjust as needed
+
+  .no-img-ico {
+    width: 5rem;
+    height: 5rem;
+    font-size: 5rem;
+  }
+
+  .no-img-text {
+    margin-top: 1em; // Adjust as needed
+    font-size: 1.5em; // Adjust as needed
+    color: #666; // Adjust as needed
+  }
+}
