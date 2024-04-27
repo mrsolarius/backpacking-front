@@ -131,7 +131,7 @@ export class CoordinateFollowerComponent {
 
   getWeatherData(lat: number, lon: number) {
   const apiKey = 'cd24834c2501f9da7da53bf7a96cb381';
-  const url = `http://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
   return this.http.get(url);
 }
 
