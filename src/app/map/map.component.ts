@@ -1,4 +1,4 @@
-// map.component.ts amélioré
+// map.component.ts optimisé avec clustering et chargement progressif
 import {
   Component,
   ElementRef,
@@ -42,13 +42,18 @@ export class MapComponent implements OnInit, OnDestroy {
   // Gestion des ressources
   private subscriptions: Subscription[] = [];
 
+  // Stockage des données photos
+  private allPhotos: PictureCoordinateDTO[] = [];
+  private visibleMarkers: { [id: number]: { marker: mapboxgl.Marker, element: HTMLDivElement } } = {};
+
+  // Clustering
+  private clusterSource?: mapboxgl.GeoJSONSource;
+  private isClustered = true;
+
   @Input() travelId: number = 0;
 
   @Output()
   photosClick = new EventEmitter<PictureCoordinateDTO>();
-
-  // Stockage des marqueurs avec leurs éléments DOM
-  private markers: { [id: number]: { marker: mapboxgl.Marker, element: HTMLDivElement } } = {};
 
   @Input()
   set photoHovered(value: PictureCoordinateDTO | undefined) {
@@ -100,6 +105,10 @@ export class MapComponent implements OnInit, OnDestroy {
     // Nettoyage des ressources
     this.subscriptions.forEach(sub => sub.unsubscribe());
 
+    // Supprimer tous les marqueurs et libérer la mémoire
+    Object.values(this.visibleMarkers).forEach(({marker}) => marker.remove());
+    this.visibleMarkers = {};
+
     if (this.map) {
       this.map.remove();
     }
@@ -115,13 +124,123 @@ export class MapComponent implements OnInit, OnDestroy {
         name: 'globe',
       },
       zoom: 1,
+      maxZoom: 20
     });
 
     this.map.on('load', () => {
       this.isLoading = false;
+      this.setupClusterLayers();
       this.loadTravelData();
       this.addSky();
       this.addTerrain();
+
+      // Gérer les événements du zoom pour le chargement progressif
+    });
+    this.map.on('zoomend', this.handleZoomEnd.bind(this));
+    this.map.on('moveend', this.handleMoveEnd.bind(this));
+  }
+
+  private handleZoomEnd() {
+
+    this.updateVisibleMarkers();
+  }
+
+  private handleMoveEnd() {
+
+    this.updateVisibleMarkers();
+  }
+
+
+  private setupClusterLayers() {
+    if (!this.map) return;
+
+    // Ajout de la source pour le clustering
+    this.map.addSource('photos', {
+      type: 'geojson',
+      data: {
+        type: 'FeatureCollection',
+        features: []
+      },
+      cluster: true,
+      clusterMaxZoom: 13, // Zoom maximal où les clusters sont générés
+      clusterRadius: 50 // Rayon de cluster
+    });
+
+    // Couche pour les clusters
+    this.map.addLayer({
+      id: 'clusters',
+      type: 'circle',
+      source: 'photos',
+      filter: ['has', 'point_count'],
+      paint: {
+        'circle-color': [
+          'step',
+          ['get', 'point_count'],
+          '#51bbd6', // couleur pour les petits clusters
+          10,        // taille du seuil
+          '#f1f075', // couleur pour les clusters moyens
+          30,        // taille du seuil
+          '#f28cb1'  // couleur pour les grands clusters
+        ],
+        'circle-radius': [
+          'step',
+          ['get', 'point_count'],
+          20,   // rayon pour les petits clusters
+          10,   // taille du seuil
+          30,   // rayon pour les clusters moyens
+          30,   // taille du seuil
+          40    // rayon pour les grands clusters
+        ]
+      }
+    });
+
+    // Couche pour le nombre de points dans chaque cluster
+    this.map.addLayer({
+      id: 'cluster-count',
+      type: 'symbol',
+      source: 'photos',
+      filter: ['has', 'point_count'],
+      layout: {
+        'text-field': '{point_count_abbreviated}',
+        'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+        'text-size': 12
+      },
+      paint: {
+        'text-color': '#ffffff'
+      }
+    });
+
+    // Récupérer la source pour une utilisation ultérieure
+    this.clusterSource = this.map.getSource('photos') as mapboxgl.GeoJSONSource;
+
+    // Ajouter un gestionnaire de clic sur les clusters
+    this.map.on('click', 'clusters', (e) => {
+      const features = this.map?.queryRenderedFeatures(e.point, { layers: ['clusters'] });
+      if (!features || features.length === 0 || !this.map) return;
+
+      const clusterId = features[0].properties!['cluster_id'];
+
+      // Zoomer sur le cluster cliqué
+      (this.map.getSource('photos') as mapboxgl.GeoJSONSource).getClusterExpansionZoom(
+        clusterId,
+        (err, zoom) => {
+          if (err || !this.map) return;
+
+          this.map.easeTo({
+            center: (features[0].geometry as GeoJSON.Point).coordinates as [number, number],
+            zoom: zoom
+          });
+        }
+      );
+    });
+
+    // Changer le curseur au survol des clusters
+    this.map.on('mouseenter', 'clusters', () => {
+      if (this.map) this.map.getCanvas().style.cursor = 'pointer';
+    });
+
+    this.map.on('mouseleave', 'clusters', () => {
+      if (this.map) this.map.getCanvas().style.cursor = '';
     });
   }
 
@@ -153,10 +272,204 @@ export class MapComponent implements OnInit, OnDestroy {
 
     // Charger les photos
     const photoSub = this.galleryService.getPicturesByTravelId(this.travelId).subscribe(data => {
-      this.addMarkers(data);
+      this.allPhotos = data;
+
+
+      // S'assurer que les données des photos sont valides
+      this.allPhotos = this.allPhotos.filter(photo => {
+        const isValid = !isNaN(photo.longitude) && !isNaN(photo.latitude);
+        if (!isValid) {
+          console.warn(`Photo ${photo.id} ignorée - coordonnées invalides`);
+        }
+        return isValid;
+      });
+
+      this.updatePhotoGeoJSON();
+
+      // Forcer la mise à jour des marqueurs après un court délai
+      // pour s'assurer que la source GeoJSON est bien chargée
+      if (this.map) {
+        setTimeout(() => {
+          this.updateVisibleMarkers();
+        }, 100);
+      }
     });
 
     this.subscriptions.push(photoSub);
+  }
+
+  // Convertir les photos en GeoJSON pour le clustering
+  private updatePhotoGeoJSON() {
+    if (!this.clusterSource || !this.allPhotos.length) return;
+
+
+
+    // Filtrer et transformer les données en GeoJSON
+    const features = this.allPhotos
+      .filter(photo => {
+        // Vérifier la validité des coordonnées
+        const isValid = !isNaN(photo.longitude) && !isNaN(photo.latitude) &&
+          Math.abs(photo.longitude) <= 180 && Math.abs(photo.latitude) <= 90;
+
+        if (!isValid) {
+          console.warn(`Photo ${photo.id} exclue du GeoJSON - coordonnées invalides: [${photo.longitude}, ${photo.latitude}]`);
+        }
+
+        return isValid;
+      })
+      .map(photo => {
+        // Log pour vérifier les coordonnées exactes utilisées
+
+
+        return {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [photo.longitude, photo.latitude]
+          },
+          properties: {
+            id: photo.id,
+            path: photo.path,
+            date: photo.date,
+            versions: photo.versions
+          }
+        };
+      });
+
+
+
+    // Mettre à jour la source de données
+    this.clusterSource.setData({
+      type: 'FeatureCollection',
+      features: features as GeoJSON.Feature[]
+    });
+  }
+
+  // Méthode pour mettre à jour les marqueurs visibles en fonction du zoom et de la position
+  private updateVisibleMarkers() {
+    if (!this.map || !this.allPhotos.length) return;
+
+    const currentZoom = this.map.getZoom();
+    const currentBounds = this.map.getBounds();
+
+    // Si le zoom est inférieur à un certain seuil, utiliser le clustering
+    if (currentZoom < 13) {
+      // Supprimer tous les marqueurs individuels
+      Object.values(this.visibleMarkers).forEach(({marker}) => marker.remove());
+      this.visibleMarkers = {};
+
+      // Activer les couches de clustering si elles ne sont pas déjà activées
+      if (!this.isClustered) {
+        this.map.setLayoutProperty('clusters', 'visibility', 'visible');
+        this.map.setLayoutProperty('cluster-count', 'visibility', 'visible');
+        this.isClustered = true;
+      }
+      return;
+    }
+
+    // À partir d'un certain zoom, afficher les marqueurs individuels et masquer les clusters
+    if (this.isClustered) {
+      this.map.setLayoutProperty('clusters', 'visibility', 'none');
+      this.map.setLayoutProperty('cluster-count', 'visibility', 'none');
+      this.isClustered = false;
+    }
+
+    // Identifier les photos dans la zone visible
+    const visiblePhotos = this.allPhotos.filter(photo => {
+      // Vérifier si les coordonnées sont valides
+      if (isNaN(photo.longitude) || isNaN(photo.latitude)) {
+        return false;
+      }
+
+      // Vérifier si la photo est dans les limites de la carte visible
+      return currentBounds.contains([photo.longitude, photo.latitude]);
+    });
+
+    // Déterminer les marqueurs à supprimer et à ajouter
+    const currentIds = new Set(visiblePhotos.map(p => p.id));
+    const existingIds = new Set(Object.keys(this.visibleMarkers).map(Number));
+
+    // Supprimer les marqueurs qui ne sont plus visibles
+    for (const id of existingIds) {
+      if (!currentIds.has(id)) {
+        this.visibleMarkers[id].marker.remove();
+        delete this.visibleMarkers[id];
+      }
+    }
+
+    // Ajouter les nouveaux marqueurs visibles
+    visiblePhotos.forEach(photo => {
+      if (!existingIds.has(photo.id)) {
+        this.addSingleMarker(photo);
+      }
+    });
+
+    // Debug: Afficher le nombre de marqueurs visibles
+
+  }
+
+  private addSingleMarker(picture: PictureCoordinateDTO) {
+    if (!this.map) return;
+
+    // Vérifier si les coordonnées sont valides - c'est crucial pour le positionnement
+    if (isNaN(picture.longitude) || isNaN(picture.latitude)) {
+      console.warn(`Coordonnées invalides pour la photo ${picture.id}: [${picture.longitude}, ${picture.latitude}]`);
+      return;
+    }
+
+    // Debug: Afficher les coordonnées exactes utilisées
+
+
+    // Vérifier que les coordonnées sont dans des plages raisonnables
+    if (Math.abs(picture.longitude) > 180 || Math.abs(picture.latitude) > 90) {
+      console.warn(`Coordonnées hors limites pour la photo ${picture.id}: [${picture.longitude}, ${picture.latitude}]`);
+      return;
+    }
+
+    // Vérifier si un marqueur existe déjà pour cette photo
+    if (this.visibleMarkers[picture.id]) {
+
+      this.visibleMarkers[picture.id].marker.setLngLat([picture.longitude, picture.latitude]);
+      return;
+    }
+
+    const el = document.createElement('div');
+    el.className = 'photo-marker';
+
+    // Ajouter un attribut data-id pour faciliter le débogage dans l'inspecteur DOM
+    el.setAttribute('data-photo-id', picture.id.toString());
+
+    // Style du marqueur (image de fond ou couleur par défaut)
+    if (picture.versions?.icon && picture.versions.icon.length > 0) {
+      el.style.backgroundImage = `url('${environment.baseApi}${picture.versions.icon[0].path}')`;
+    } else if (picture.path) {
+      el.style.backgroundImage = `url('${environment.baseApi}${picture.path}')`;
+    } else {
+      console.warn(`Chemin d'image invalide pour la photo ${picture.id}`);
+      el.style.backgroundColor = '#3498db'; // Couleur bleue par défaut
+    }
+
+    // IMPORTANT: Créer le marqueur avec les coordonnées correctes
+    const marker = new mapboxgl.Marker(el)
+      .setLngLat([picture.longitude, picture.latitude])
+      .addTo(this.map);
+
+    // Log pour déboguer le positionnement
+
+
+    // Stocker le marqueur avec son élément DOM
+    this.visibleMarkers[picture.id] = { marker, element: el };
+
+    // Ajouter l'événement click
+    el.addEventListener('click', () => {
+      this.highlightMarker(picture.id);
+      this.photosClick.emit(picture);
+    });
+
+    // Ajouter un popup au survol (création à la demande)
+    el.addEventListener('mouseenter', () => {
+      this.createMarkerPopup(picture, marker);
+    });
   }
 
   // Méthode pour nettoyer les données de la carte avant de charger un nouveau voyage
@@ -168,13 +481,24 @@ export class MapComponent implements OnInit, OnDestroy {
     }
 
     // Supprimer tous les marqueurs
-    Object.values(this.markers).forEach(({marker}) => marker.remove());
-    this.markers = {};
+    Object.values(this.visibleMarkers).forEach(({marker}) => marker.remove());
+    this.visibleMarkers = {};
 
     // Supprimer le marqueur de position courante
     if (this.meMarker) {
       this.meMarker.remove();
     }
+
+    // Réinitialiser la source de cluster
+    if (this.clusterSource) {
+      this.clusterSource.setData({
+        type: 'FeatureCollection',
+        features: []
+      });
+    }
+
+    // Vider les données des photos
+    this.allPhotos = [];
   }
 
   addTerrain() {
@@ -273,48 +597,6 @@ export class MapComponent implements OnInit, OnDestroy {
       .addTo(this.map);
   }
 
-  private addMarkers(pictures: PictureCoordinateDTO[]) {
-    if (!this.map) return;
-
-    pictures.forEach(picture => {
-      // Vérifier si les coordonnées sont valides
-      if (isNaN(picture.longitude) || isNaN(picture.latitude)) {
-        console.warn(`Coordonnées invalides pour la photo ${picture.id}`);
-        return;
-      }
-
-      const el = document.createElement('div');
-      el.className = 'marker';
-
-      // Utiliser une version miniature si disponible
-      if (picture.versions?.icon && picture.versions.icon.length > 0) {
-        el.style.backgroundImage = `url('${environment.baseApi}${picture.versions.icon[0].path}')`;
-      } else {
-        el.style.backgroundImage = `url('${environment.baseApi}${picture.path}/dot.webp')`;
-      }
-
-      el.style.backgroundSize = 'cover';
-
-      const marker = new mapboxgl.Marker(el)
-        .setLngLat([picture.longitude, picture.latitude])
-        .addTo(this.map as any);
-
-      // Stocker le marqueur avec son élément DOM pour pouvoir le manipuler plus tard
-      this.markers[picture.id] = { marker, element: el };
-
-      // Ajouter l'événement click
-      el.addEventListener('click', () => {
-        this.highlightMarker(picture.id);
-        this.photosClick.emit(picture);
-      });
-
-      // Ajouter un popup au survol
-      el.addEventListener('mouseenter', () => {
-        this.createMarkerPopup(picture, marker);
-      });
-    });
-  }
-
   private createMarkerPopup(picture: PictureCoordinateDTO, marker: mapboxgl.Marker) {
     if (!this.map) return;
 
@@ -323,27 +605,22 @@ export class MapComponent implements OnInit, OnDestroy {
 
     // Créer le contenu du popup
     const popupContent = document.createElement('div');
-    popupContent.className = 'marker-popup';
+    popupContent.className = 'map-popup';
 
-    // Ajouter une image miniature - utiliser de préférence la version icon pour le popup aussi
+    // Utiliser des lazy loading pour les images
     if (picture.versions?.icon && picture.versions.icon.length > 0) {
-      // Utiliser icon avec résolution 3x si disponible, sinon prendre la première
-      const iconPath = picture.versions.icon[2]?.path || picture.versions.icon[0].path;
+      const iconPath = picture.versions.icon[0].path;
       const img = document.createElement('img');
+      img.className = 'popup-image';
+      img.loading = 'lazy';  // Ajouter lazy loading
       img.src = `${environment.baseApi}${iconPath}`;
       img.alt = `Photo du ${new Date(picture.date).toLocaleDateString()}`;
-      img.style.width = '100%';
-      img.style.maxHeight = '120px';
-      img.style.objectFit = 'cover';
-      img.style.borderRadius = '4px';
       popupContent.appendChild(img);
     }
 
     // Ajouter la date
     const dateEl = document.createElement('div');
-    dateEl.style.fontSize = '12px';
-    dateEl.style.marginTop = '4px';
-    dateEl.style.textAlign = 'center';
+    dateEl.className = 'popup-date';
     dateEl.textContent = new Date(picture.date).toLocaleDateString('fr-FR', {
       day: '2-digit',
       month: 'short',
@@ -371,7 +648,7 @@ export class MapComponent implements OnInit, OnDestroy {
 
   private highlightMarker(id: number | null) {
     // Réinitialiser tous les marqueurs
-    Object.entries(this.markers).forEach(([markerId, marker]) => {
+    Object.entries(this.visibleMarkers).forEach(([markerId, marker]) => {
       const el = marker.element;
 
       if (parseInt(markerId) === id) {
@@ -395,7 +672,7 @@ export class MapComponent implements OnInit, OnDestroy {
   }
 
   private resetMarkerSizes() {
-    Object.values(this.markers).forEach(({ element }) => {
+    Object.values(this.visibleMarkers).forEach(({ element }) => {
       element.style.width = '30px';
       element.style.height = '30px';
       element.style.borderRadius = '50%';
