@@ -6,7 +6,9 @@
       <div class="travel-grid">
         @for (travel of (travels$ | async); track travel.id) {
           <mat-card class="travel-card" [routerLink]="['/travels', travel.id]">
-            <img mat-card-image [src]="getCoverImageUrl(travel)" alt="Photo de couverture du voyage">
+            @if(travel.coverPicture !== null) {
+              <img mat-card-image [src]="getCoverImageUrl(travel)" alt="Photo de couverture du voyage">
+            }
             <mat-card-content>
               <h2>{{ travel.name }}</h2>
               <p class="date-range">
