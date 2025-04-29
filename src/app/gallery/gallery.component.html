@@ -1,34 +1,67 @@
+<!-- gallery.component.html amélioré -->
 @if(isBrowser) {
-  <div class="images" [photoGalleryGroup]="{ arrowEl: true, indexIndicatorSep: ' - ',index: selectedIndex,  }" (onPhotoGalleryInit)="galleryinit($event)" >
-    @if ((picturesObs|async); as pictures) {
-      @if(pictures.length>0) {
-        @for (pict of pictures; track pict.id; let index = $index) {
-          @if (index === 0 || pictures[index - 1].date.getDay() !== pict.date.getDay()) {
-            <div class="date">{{
-                pict.date.toLocaleDateString('fr-FR', {
-                  weekday: 'short',
-                  day: '2-digit',
-                  month: 'short'
-                })
-              }}
+  <div class="gallery-container" [photoGalleryGroup]="{
+    arrowEl: true,
+    indexIndicatorSep: ' / ',
+    index: selectedIndex
+  }">
+    @if ((picturesObs | async); as pictures) {
+      @if(pictures.length > 0) {
+        <div class="images-grid">
+          @for (picture of pictures; track picture.id; let i = $index) {
+            @if (shouldShowDate(pictures, i)) {
+              <div class="date-separator">
+                {{ formatDate(picture.date) }}
+              </div>
+            }
+
+            <div class="image-wrapper" [attr.id]="picture.id" [ngClass]="getImageOrientation(picture)">
+              <a
+                class="image-link"
+                [photoGallery]="getImageUrl(picture, 'fullsize')"
+                (mouseover)="imageHover(picture)"
+                [ngClass]="{'selected': selectedPhoto?.id === picture.id}"
+              >
+                <picture appImageLoader>
+                  <!-- Desktop sizes -->
+                  <source
+                    [srcset]="getSrcSet(picture, 'desktop')"
+                    media="(min-width: 1025px)"
+                    type="image/webp">
+
+                  <!-- Tablet sizes -->
+                  <source
+                    [srcset]="getSrcSet(picture, 'tablet')"
+                    media="(min-width: 641px) and (max-width: 1024px)"
+                    type="image/webp">
+
+                  <!-- Mobile sizes -->
+                  <source
+                    [srcset]="getSrcSet(picture, 'mobile')"
+                    media="(max-width: 640px)"
+                    type="image/webp">
+
+                  <!-- Fallback image -->
+                  <img
+                    [src]="getImageUrl(picture)"
+                    [alt]="'Photo ' + picture.id"
+                    loading="lazy"
+                    class="gallery-image">
+                </picture>
+
+                @if (selectedPhoto?.id === picture.id) {
+                  <div class="selected-indicator">
+                    <mat-icon>check_circle</mat-icon>
+                  </div>
+                }
+              </a>
             </div>
           }
-          <a class="image" href="#" [attr.id]="pict.id" [photoGallery]="getPituresUrl(pict,'raw')"
-             (mouseover)="imageHover(pict)"
-             [ngClass]="pict.width > pict.height ? 'landscape' : 'portrait'">
-            <picture>
-              <source [srcset]="getPituresUrl(pict,'xl')" media="(max-width: 1600px)" type="image/webp">
-              <source [srcset]="getPituresUrl(pict,'l')" media="(max-width: 1080px)" type="image/webp">
-              <source [srcset]="getPituresUrl(pict,'m')" media="(max-width: 500px)" type="image/webp">
-              <source [srcset]="getPituresUrl(pict,'xs')" media="(max-width: 375px)" type="image/webp">
-              <img [src]="getPituresUrl(pict,'m')" loading="lazy" style="width: 100%">
-            </picture>
-          </a>
-        }
+        </div>
       } @else {
-        <div class="no-img-container">
-          <mat-icon class="no-img-ico" color="primary">landscape</mat-icon>
-          <div class="no-img-text">Aucune photo pour le moment</div>
+        <div class="no-images">
+          <mat-icon class="no-images-icon" color="primary">landscape</mat-icon>
+          <div class="no-images-text">Aucune photo pour ce voyage</div>
         </div>
       }
     }

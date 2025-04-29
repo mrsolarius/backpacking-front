@@ -1,10 +1,10 @@
 @if(isBrowser && coordinates.length > 0) {
   <div class="form-container">
-  <mat-checkbox (change)="cameraFollowChanged($event)" [checked]="true" color="primary">Activer le suivit de la caméra
-  </mat-checkbox>
-  <mat-slider class="slider" min="0" [max]="coordinates.length-1" step="1" [displayWith]="formatLabel.bind(this)">
-    <input matSliderThumb [(ngModel)]="selectedCoordinate" (valueChange)="onSliderChange($event)">
-  </mat-slider>
+    <mat-checkbox (change)="cameraFollowChanged($event)" [checked]="true" color="primary">Activer le suivi de la caméra
+    </mat-checkbox>
+    <mat-slider class="slider" min="0" [max]="coordinates.length-1" step="1" [displayWith]="formatLabel.bind(this)">
+      <input matSliderThumb [(ngModel)]="selectedCoordinate" (valueChange)="onSliderChange($event)">
+    </mat-slider>
   </div>
   <div class="weather-container">
     @if (weatherData) {
@@ -55,7 +55,7 @@
   <div class="spacer"></div>
 } @else {
   <div class="form-container">
-    <mat-checkbox (change)="cameraFollowChanged($event)" [checked]="true" color="primary">Activer le suivit de la caméra
+    <mat-checkbox (change)="cameraFollowChanged($event)" [checked]="true" color="primary">Activer le suivi de la caméra
     </mat-checkbox>
     <mat-slider class="slider" min="0" max="0">
       <input matSliderThumb>

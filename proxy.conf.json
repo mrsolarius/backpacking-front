@@ -1,0 +1,14 @@
+{
+  "/api": {
+    "target": "https://api.backpaking.louisvolat.fr",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/uploads": {
+    "target": "https://api.backpaking.louisvolat.fr",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  }
+}

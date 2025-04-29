@@ -1,0 +1,35 @@
+<div class="travel-list-container">
+  <h1 class="page-title">Mes voyages</h1>
+
+  @if (isBrowser) {
+    @if ((travels$ | async)?.length) {
+      <div class="travel-grid">
+        @for (travel of (travels$ | async); track travel.id) {
+          <mat-card class="travel-card" [routerLink]="['/travels', travel.id]">
+            <img mat-card-image [src]="getCoverImageUrl(travel)" alt="Photo de couverture du voyage">
+            <mat-card-content>
+              <h2>{{ travel.name }}</h2>
+              <p class="date-range">
+                {{ travel.startDate | date:'dd MMM yyyy' }}
+                <span *ngIf="travel.endDate"> - {{ travel.endDate | date:'dd MMM yyyy' }}</span>
+              </p>
+              <p class="description">{{ travel.description }}</p>
+            </mat-card-content>
+            <mat-card-actions>
+              <button mat-button color="primary">EXPLORER</button>
+            </mat-card-actions>
+          </mat-card>
+        }
+      </div>
+    } @else {
+      <div class="no-travels">
+        <mat-icon class="no-travels-icon">hiking</mat-icon>
+        <p>Aucun voyage à afficher pour le moment.</p>
+      </div>
+    }
+  } @else {
+    <div class="loading-container">
+      <p>Chargement des voyages...</p>
+    </div>
+  }
+</div>

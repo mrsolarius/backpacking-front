@@ -1,10 +1,13 @@
-import {Component, EventEmitter, Inject, Input, Output, PLATFORM_ID} from '@angular/core';
-import {AsyncPipe, CommonModule, isPlatformBrowser, NgOptimizedImage} from "@angular/common";
-import {PictureCoordinateDTO} from "./images.dto";
-import {GalleryService} from "./gallery.service";
-import {first, Observable} from "rxjs";
-import {PhotoGalleryModule} from "@twogate/ngx-photo-gallery";
-import {MatIcon} from "@angular/material/icon";
+// gallery.component.ts amélioré
+import { Component, EventEmitter, Inject, Input, OnInit, Output, PLATFORM_ID } from '@angular/core';
+import { AsyncPipe, CommonModule, isPlatformBrowser } from "@angular/common";
+import { PictureCoordinateDTO } from "./images.dto";
+import { GalleryService } from "./gallery.service";
+import { BehaviorSubject, Observable, distinctUntilChanged, map, switchMap } from "rxjs";
+import { PhotoGalleryModule } from "@twogate/ngx-photo-gallery";
+import { MatIcon } from "@angular/material/icon";
+import { environment } from "../../environments/environment";
+import { ImageLoaderDirective } from "./image-loader.directive";
 
 @Component({
   selector: 'app-gallery',
@@ -13,59 +16,132 @@ import {MatIcon} from "@angular/material/icon";
     AsyncPipe,
     CommonModule,
     PhotoGalleryModule,
-    MatIcon
+    MatIcon,
+    ImageLoaderDirective
   ],
   templateUrl: './gallery.component.html',
   styleUrl: './gallery.component.scss'
 })
-export class GalleryComponent {
-  protected static storageURL = 'https://api.backpaking.louisvolat.fr/storage';
+export class GalleryComponent implements OnInit {
+  protected readonly storageURL = environment.baseApi;
   isBrowser: boolean;
-  constructor(@Inject(PLATFORM_ID) platformId: Object, private galleryService: GalleryService) {
+
+  private travelIdSubject = new BehaviorSubject<number>(0);
+  private _selectedPhotoSubject = new BehaviorSubject<PictureCoordinateDTO | undefined>(undefined);
+
+  selectedPhotoObs = this._selectedPhotoSubject.asObservable().pipe(distinctUntilChanged((prev, curr) => prev?.id === curr?.id));
+  selectedIndex: number = 0;
+
+  @Input() set travelId(value: number) {
+    this.travelIdSubject.next(value);
+  }
+  get travelId(): number {
+    return this.travelIdSubject.value;
+  }
+
+  @Input() set selectedPhoto(value: PictureCoordinateDTO | undefined) {
+    this._selectedPhotoSubject.next(value);
+  }
+  get selectedPhoto(): PictureCoordinateDTO | undefined {
+    return this._selectedPhotoSubject.value;
+  }
+
+  @Output() photoHover = new EventEmitter<PictureCoordinateDTO>();
+
+  picturesObs: Observable<PictureCoordinateDTO[]>;
+
+  constructor(
+    @Inject(PLATFORM_ID) platformId: Object,
+    private galleryService: GalleryService
+  ) {
     this.isBrowser = isPlatformBrowser(platformId);
-  }
 
-  selectedPhotoValue: PictureCoordinateDTO | undefined;
+    // Réagir aux changements de travel ID et charger les images correspondantes
+    this.picturesObs = this.travelIdSubject.pipe(
+      distinctUntilChanged(),
+      switchMap(travelId => travelId ? this.galleryService.getPicturesByTravelId(travelId) : [])
+    );
 
-  @Input()
-  set selectedPhoto(value: PictureCoordinateDTO | undefined) {
-    this.selectedPhotoValue = value;
-    if (value) {
-      this.picturesObs.pipe(first()).subscribe((items)=>this.selectedIndex=items.findIndex(picture => picture.id === value.id));
-      let element = document.getElementById(value.id.toString());
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
+    // Observer les changements de photo sélectionnée et mettre à jour l'index
+    this.selectedPhotoObs.subscribe(selectedPhoto => {
+      if (selectedPhoto) {
+        this.updateSelectedIndex(selectedPhoto);
       }
+    });
+  }
+
+  ngOnInit() {
+    // Pas besoin de vérifier isBrowser ici car on utilise déjà les observables
+  }
+
+  private updateSelectedIndex(photo: PictureCoordinateDTO): void {
+    this.picturesObs.pipe(
+      map(pictures => pictures.findIndex(p => p.id === photo.id))
+    ).subscribe(index => {
+      if (index !== -1) {
+        this.selectedIndex = index;
+        this.scrollToSelectedImage(photo.id);
+      }
+    });
+  }
+
+  private scrollToSelectedImage(id: number): void {
+    if (this.isBrowser) {
+      setTimeout(() => {
+        const element = document.getElementById(id.toString());
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }, 100);
     }
   }
 
-  @Output()
-  photoHover = new EventEmitter<PictureCoordinateDTO>();
-
-
-  protected picturesObs: Observable<PictureCoordinateDTO[]> = this.galleryService.getPictures();
-  selectedIndex: any;
-
-
-
-  getPituresUrl(picture: PictureCoordinateDTO,size:string): string {
-    if (size === "raw"){
-      return `${GalleryComponent.storageURL}/${picture.path}/${size}.jpg`;
+  getImageUrl(picture: PictureCoordinateDTO, type: 'thumbnail' | 'fullsize' = 'thumbnail'): string {
+    if (!picture || !picture.versions) {
+      return '';
     }
-    return `${GalleryComponent.storageURL}/${picture.path}/${size}.webp`;
+
+    if (type === 'fullsize') {
+      return `${this.storageURL}${picture.path}`;
+    }
+
+    // Retourne l'URL de la version tablette avec résolution 1x par défaut
+    const tabletVersion = picture.versions.tablet?.[0];
+    return tabletVersion ? `${this.storageURL}${tabletVersion.path}` : '';
   }
 
-  imageHover( pict: PictureCoordinateDTO) {
-    this.photoHover.emit(pict);
+  getSrcSet(picture: PictureCoordinateDTO, deviceType: 'desktop' | 'tablet' | 'mobile'): string {
+    if (!picture?.versions?.[deviceType]) {
+      return '';
+    }
+
+    return picture.versions[deviceType]!
+      .map(v => `${this.storageURL}${v.path} ${v.resolution}x`)
+      .join(', ');
   }
 
-  galleryinit($event: any) {
-
+  getImageOrientation(picture: PictureCoordinateDTO): 'landscape' | 'portrait' {
+    return picture.width > picture.height ? 'landscape' : 'portrait';
   }
-}
 
+  formatDate(date: Date): string {
+    return date.toLocaleDateString('fr-FR', {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short'
+    });
+  }
 
-interface PictureDetails {
-  srcset: string;
-  media: string;
+  shouldShowDate(pictures: PictureCoordinateDTO[], index: number): boolean {
+    if (index === 0) return true;
+
+    const currentDate = pictures[index].date;
+    const previousDate = pictures[index - 1].date;
+
+    return currentDate.getDay() !== previousDate.getDay();
+  }
+
+  imageHover(picture: PictureCoordinateDTO): void {
+    this.photoHover.emit(picture);
+  }
 }

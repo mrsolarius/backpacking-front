@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Inject, Output, PLATFORM_ID} from '@angular/core';
+import {Component, EventEmitter, Inject, Input, OnInit, Output, PLATFORM_ID, SimpleChanges} from '@angular/core';
 import {MatSlider, MatSliderThumb} from "@angular/material/slider";
 import {MapDataService} from "../map/map-data.service";
 import {AsyncPipe, isPlatformBrowser} from "@angular/common";
@@ -31,7 +31,7 @@ export enum CameraFollow {
   templateUrl: './coordinate-follower.component.html',
   styleUrl: './coordinate-follower.component.scss'
 })
-export class CoordinateFollowerComponent {
+export class CoordinateFollowerComponent implements OnInit {
   weatherIconMap:any = {
     '200': 'thunder.svg', // Thunderstorm with light rain
     '201': 'thunder.svg', // Thunderstorm with rain
@@ -94,6 +94,7 @@ export class CoordinateFollowerComponent {
     '804': 'cloudy.svg', // Overcast clouds: 85-100%
   };
 
+  @Input() travelId: number = 0;
 
   @Output()
   sliderChange = new EventEmitter<CoordinateDto>();
@@ -103,25 +104,53 @@ export class CoordinateFollowerComponent {
   selectedCoordinate: number = 0;
   weatherData: any;
   isBrowser: boolean;
-  constructor(@Inject(PLATFORM_ID) platformId:any,mapDataService: MapDataService, private http: HttpClient) {
 
+  constructor(
+    @Inject(PLATFORM_ID) platformId: any,
+    private mapDataService: MapDataService,
+    private http: HttpClient
+  ) {
     this.isBrowser = isPlatformBrowser(platformId);
-    if(this.isBrowser) {
-      mapDataService.getCoordinates().pipe(first()).subscribe((coordinates) => {
-        this.coordinates = coordinates;
-        this.selectedCoordinate = this.coordinates.length - 1;
-        this.onSliderChange(this.selectedCoordinate);
-      });
+  }
+
+  ngOnInit() {
+    if (this.isBrowser && this.travelId) {
+      this.loadCoordinates();
     }
   }
 
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['travelId'] && !changes['travelId'].firstChange && this.isBrowser) {
+      this.loadCoordinates();
+    }
+  }
+
+  loadCoordinates() {
+    this.mapDataService.getCoordinatesByTravelId(this.travelId).pipe(first()).subscribe((coordinates) => {
+      this.coordinates = coordinates;
+      if (this.coordinates.length > 0) {
+        this.selectedCoordinate = this.coordinates.length - 1;
+        this.onSliderChange(this.selectedCoordinate);
+      }
+    });
+  }
+
   formatLabel(p1: number) {
-      console.log(this.coordinates[p1].date.toLocaleDateString('fr-FR', {  day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-      return this.coordinates[p1].date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    if (!this.coordinates || !this.coordinates[p1]) return '';
+
+    return this.coordinates[p1].date.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
   }
 
   onSliderChange(selectedCoordinate: number) {
-      this.sliderChange.emit(this.coordinates[selectedCoordinate]);
+    if (!this.coordinates || this.coordinates.length === 0) return;
+
+    this.sliderChange.emit(this.coordinates[selectedCoordinate]);
     this.getWeatherData(this.coordinates[selectedCoordinate].latitude, this.coordinates[selectedCoordinate].longitude)
       .pipe(first())
       .subscribe(data => {
@@ -130,10 +159,10 @@ export class CoordinateFollowerComponent {
   }
 
   getWeatherData(lat: number, lon: number) {
-  const apiKey = 'cd24834c2501f9da7da53bf7a96cb381';
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
-  return this.http.get(url);
-}
+    const apiKey = 'cd24834c2501f9da7da53bf7a96cb381';
+    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+    return this.http.get(url);
+  }
 
   getDayOrNight(date: Date) {
     const hours = date.getHours();
