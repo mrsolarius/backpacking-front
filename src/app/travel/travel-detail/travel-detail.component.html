@@ -48,7 +48,7 @@
                 <div class="stat-item">
                   <mat-icon>calendar_today</mat-icon>
                   <span>Durée: {{ travel.endDate ?
-                    (travel.endDate.getTime() - travel.startDate.getTime()) / (1000 * 60 * 60 * 24) + ' jours' :
+                    ((travel.endDate.getTime() - travel.startDate.getTime()) / (1000 * 60 * 60 * 24) | number: '1.0-0')+ ' jours' :
                     'En cours' }}</span>
                 </div>
 

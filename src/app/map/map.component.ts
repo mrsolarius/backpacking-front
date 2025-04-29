@@ -550,6 +550,15 @@ export class MapComponent implements OnInit, OnDestroy {
         'line-cap': 'round'
       },
       'paint': {
+        'line-color': 'rgba(23, 127, 253, 1)',
+        'line-width': 3,
+        'line-opacity': [
+          'interpolate',
+          ['linear'],
+          ['line-progress'],
+          0, 0.2,       // Point de départ avec opacité faible
+          1, 1          // Point d'arrivée avec opacité maximale
+        ],
         'line-gradient': [
           'interpolate',
           ['linear'],

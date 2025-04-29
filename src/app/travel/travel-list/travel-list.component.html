@@ -7,7 +7,34 @@
         @for (travel of (travels$ | async); track travel.id) {
           <mat-card class="travel-card" [routerLink]="['/travels', travel.id]">
             @if(travel.coverPicture !== null) {
-              <img mat-card-image [src]="getCoverImageUrl(travel)" alt="Photo de couverture du voyage">
+              <div class="mat-card-image-container">
+              <picture appImageLoader>
+                <!-- Desktop sizes -->
+                <source
+                  [srcset]="getSrcSet(travel.coverPicture, 'desktop')"
+                  media="(min-width: 1025px)"
+                  type="image/webp">
+
+                <!-- Tablet sizes -->
+                <source
+                  [srcset]="getSrcSet(travel.coverPicture, 'tablet')"
+                  media="(min-width: 641px) and (max-width: 1024px)"
+                  type="image/webp">
+
+                <!-- Mobile sizes -->
+                <source
+                  [srcset]="getSrcSet(travel.coverPicture, 'mobile')"
+                  media="(max-width: 640px)"
+                  type="image/webp">
+
+                <!-- Fallback image -->
+                <img
+                  [src]="getImageUrl(travel.coverPicture)"
+                  loading="lazy"
+                  alt="Photo de couverture du voyage"
+                  class="gallery-image">
+              </picture>
+              </div>
             }
             <mat-card-content>
               <h2>{{ travel.name }}</h2>

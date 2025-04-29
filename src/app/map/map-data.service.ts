@@ -13,7 +13,7 @@ export class MapDataService {
 
   // Récupère les coordonnées d'un voyage spécifique
   public getCoordinatesByTravelId(travelId: number): Observable<CoordinateDto[]> {
-    return this.http.get<CoordinateObjsDTO[]>(`${environment.apiUrl}travels/${travelId}/coordinates`).pipe(
+    return this.http.get<CoordinateObjsDTO[]>(`${environment.apiUrl}/travels/${travelId}/coordinates`).pipe(
       map(data => data.map((c) => ({
         ...c,
         latitude: parseFloat(c.latitude),

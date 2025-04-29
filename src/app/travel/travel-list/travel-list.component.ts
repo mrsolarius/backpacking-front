@@ -8,6 +8,9 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { Inject, PLATFORM_ID } from '@angular/core';
+import {ImageLoaderDirective} from "../../gallery/image-loader.directive";
+import {PictureCoordinateDTO} from "../../gallery/images.dto";
+import {environment} from "../../../environments/environment";
 
 @Component({
   selector: 'app-travel-list',
@@ -18,7 +21,8 @@ import { Inject, PLATFORM_ID } from '@angular/core';
     AsyncPipe,
     MatCardModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    ImageLoaderDirective
   ],
   templateUrl: './travel-list.component.html',
   styleUrls: ['./travel-list.component.scss']
@@ -40,10 +44,27 @@ export class TravelListComponent implements OnInit {
     }
   }
 
-  getCoverImageUrl(travel: TravelDTO): string {
-    if (travel.coverPicture && travel.coverPicture.path) {
-      return `https://api.backpaking.louisvolat.fr/storage/${travel.coverPicture.path}/l.webp`;
+  getSrcSet(picture: PictureCoordinateDTO, deviceType: 'desktop' | 'tablet' | 'mobile'): string {
+    if (!picture?.versions?.[deviceType]) {
+      return '';
     }
-    return 'assets/placeholder-travel.jpg'; // Image par défaut si pas de couverture
+
+    return picture.versions[deviceType]!
+      .map(v => `${environment.baseApi}${v.path} ${v.resolution}x`)
+      .join(', ');
+  }
+
+  getImageUrl(picture: PictureCoordinateDTO, type: 'thumbnail' | 'fullsize' = 'thumbnail'): string {
+    if (!picture || !picture.versions) {
+      return '';
+    }
+
+    if (type === 'fullsize') {
+      return `${environment.baseApi}${picture.path}`;
+    }
+
+    // Retourne l'URL de la version tablette avec résolution 1x par défaut
+    const tabletVersion = picture.versions.tablet?.[0];
+    return tabletVersion ? `${environment.baseApi}${tabletVersion.path}` : '';
   }
 }
