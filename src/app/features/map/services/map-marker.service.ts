@@ -1,29 +1,37 @@
-import {Injectable} from '@angular/core';
-import {LngLat, Map as MapboxMap, Marker, Popup} from 'mapbox-gl';
-import {IMapMarkerService, MarkerOptions} from '../interfaces/map-marker.interface';
-import {environment} from '../../../../environments/environment';
-import {PictureCoordinateDTO} from "../../../core/models/dto/images.dto";
+import { Inject, Injectable, Optional } from '@angular/core';
+import { LngLat, Map as MapboxMap, Marker, Popup } from 'mapbox-gl';
+import { IMapMarkerService, MarkerOptions } from '../interfaces/map-marker.interface';
+import { environment } from '../../../../environments/environment';
+import { PictureCoordinateDTO } from "../../../core/models/dto/images.dto";
+import { IMapMarkerPoolService } from '../interfaces/map-marker-pool.interface';
+import { MARKER_POOL_SERVICE } from '../tokens/map.token';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MapMarkerService implements IMapMarkerService {
-  // Pool de marqueurs réutilisables
+  private popups: Popup[] = [];           // Suivi des popups actifs
+  private isZooming = false;              // Indicateur de zoom actif
+
+  // Pool de marqueurs réutilisables (si le service n'est pas injecté)
   private markerPool: HTMLDivElement[] = [];
   private meMarkerPool: HTMLDivElement[] = [];
   private readonly PHOTO_POOL_SIZE = 100; // Taille maximale du pool de photos
   private readonly ME_POOL_SIZE = 5;      // Taille maximale du pool de marqueurs personnels
-  private popups: Popup[] = [];           // Suivi des popups actifs
-  private isZooming = false;              // Indicateur de zoom actif
 
-  constructor() {
-    this.initMarkerPool();
+  constructor(
+    @Optional() @Inject(MARKER_POOL_SERVICE) private markerPoolService?: IMapMarkerPoolService
+  ) {
+    // Si le service de pool n'a pas été injecté, initialiser les pools localement
+    if (!this.markerPoolService) {
+      this.initLocalMarkerPool();
+    }
   }
 
   /**
-   * Initialise les pools de marqueurs
+   * Initialise les pools de marqueurs localement si le service de pool n'est pas disponible
    */
-  initMarkerPool(): void {
+  private initLocalMarkerPool(): void {
     // Pré-création des éléments de marqueurs photo pour le pool
     for (let i = 0; i < this.PHOTO_POOL_SIZE; i++) {
       const el = document.createElement('div');
@@ -46,7 +54,7 @@ export class MapMarkerService implements IMapMarkerService {
   /**
    * Récupère un marqueur photo du pool ou en crée un nouveau
    */
-  getMarkerFromPool(): HTMLDivElement {
+  private getMarkerFromLocalPool(): HTMLDivElement {
     // Chercher un marqueur disponible dans le pool
     const poolElement = this.markerPool.find(el => el.style.display === 'none');
 
@@ -81,7 +89,7 @@ export class MapMarkerService implements IMapMarkerService {
   /**
    * Récupère un marqueur personnel du pool ou en crée un nouveau
    */
-  private getMeMarkerFromPool(): HTMLDivElement {
+  private getMeMarkerFromLocalPool(): HTMLDivElement {
     const poolElement = this.meMarkerPool.find(el => el.style.display === 'none');
 
     if (poolElement) {
@@ -104,9 +112,9 @@ export class MapMarkerService implements IMapMarkerService {
   }
 
   /**
-   * Retourne un marqueur photo au pool
+   * Retourne un marqueur au pool local
    */
-  returnMarkerToPool(element: HTMLDivElement): void {
+  private returnMarkerToLocalPool(element: HTMLDivElement): void {
     if (!element) return;
 
     // Réinitialiser l'élément
@@ -156,7 +164,9 @@ export class MapMarkerService implements IMapMarkerService {
     }
 
     // Obtenir un élément du pool de marqueurs
-    const el = this.getMarkerFromPool();
+    const el = this.markerPoolService
+      ? this.markerPoolService.getMarkerFromPool()
+      : this.getMarkerFromLocalPool();
 
     // Ajouter un attribut data-id pour l'identification
     el.setAttribute('data-photo-id', photo.id.toString());
@@ -253,7 +263,9 @@ export class MapMarkerService implements IMapMarkerService {
    * Crée un marqueur personnalisé pour la position actuelle avec le pool
    */
   createMeMarker(coordinates: LngLat, map: MapboxMap): Marker {
-    const el = this.getMeMarkerFromPool();
+    const el = this.markerPoolService
+      ? this.markerPoolService.getMeMarkerFromPool()
+      : this.getMeMarkerFromLocalPool();
 
     // Ajouter le marqueur sur la carte
     const marker = this.createMarker({
@@ -385,7 +397,12 @@ export class MapMarkerService implements IMapMarkerService {
   removeMarkers(markers: Record<string, { marker: Marker, element: HTMLDivElement }>): void {
     Object.values(markers).forEach(({marker, element}) => {
       marker.remove();
-      this.returnMarkerToPool(element);
+
+      if (this.markerPoolService) {
+        this.markerPoolService.returnMarkerToPool(element);
+      } else {
+        this.returnMarkerToLocalPool(element);
+      }
     });
   }
 
@@ -413,7 +430,13 @@ export class MapMarkerService implements IMapMarkerService {
         idsToRemove.forEach(id => {
           const {marker, element} = visibleMarkers[id];
           marker.remove();
-          this.returnMarkerToPool(element);
+
+          if (this.markerPoolService) {
+            this.markerPoolService.returnMarkerToPool(element);
+          } else {
+            this.returnMarkerToLocalPool(element);
+          }
+
           delete visibleMarkers[id];
         });
       } else {
@@ -426,7 +449,13 @@ export class MapMarkerService implements IMapMarkerService {
             if (visibleMarkers[id]) {
               const {marker, element} = visibleMarkers[id];
               marker.remove();
-              this.returnMarkerToPool(element);
+
+              if (this.markerPoolService) {
+                this.markerPoolService.returnMarkerToPool(element);
+              } else {
+                this.returnMarkerToLocalPool(element);
+              }
+
               delete visibleMarkers[id];
             }
           }

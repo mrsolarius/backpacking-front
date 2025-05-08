@@ -9,11 +9,6 @@ export interface IMapMarkerService {
   resetMarkerSizes(markers: Record<string, { marker: Marker, element: HTMLDivElement }>): void;
   createMarkerPopup(picture: PictureCoordinateDTO, marker: Marker, map: MapboxMap): void;
   removeMarkers(markers: Record<string, { marker: Marker, element: HTMLDivElement }>): void;
-
-  // Nouvelles méthodes pour le pool de marqueurs
-  initMarkerPool(): void;
-  getMarkerFromPool(): HTMLDivElement;
-  returnMarkerToPool(element: HTMLDivElement): void;
   optimizeVisibleMarkers(
     visibleMarkers: Record<string, { marker: Marker, element: HTMLDivElement }>,
     visibleIds: Set<number>

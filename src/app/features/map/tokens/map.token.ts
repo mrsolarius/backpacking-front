@@ -3,8 +3,10 @@ import { IMapProvider } from '../interfaces/map-provider.interface';
 import { IMapMarkerService } from '../interfaces/map-marker.interface';
 import { IMapClusteringService } from '../interfaces/map-clustering.interface';
 import { IMapAnimationService } from '../interfaces/map-animation.interface';
+import {IMapMarkerPoolService} from "../interfaces/map-marker-pool.interface";
 
 export const MAP_PROVIDER = new InjectionToken<IMapProvider>('MapProvider');
 export const MARKER_SERVICE = new InjectionToken<IMapMarkerService>('MarkerService');
 export const CLUSTERING_SERVICE = new InjectionToken<IMapClusteringService>('ClusteringService');
 export const MAP_ANIMATION_SERVICE = new InjectionToken<IMapAnimationService>('MapAnimationService');
+export const MARKER_POOL_SERVICE = new InjectionToken<IMapMarkerPoolService>('MarkerPoolService');
