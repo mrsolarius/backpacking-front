@@ -1,16 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { AsyncPipe, CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { TravelService } from '../travel.service';
-import { TravelDTO } from '../dto/travel.dto';
-import { Observable } from 'rxjs';
+import { TravelService } from '../../../core/services/travel.service';
+import { TravelDTO } from '../../../core/models/dto/travel.dto';
+import {map, Observable} from 'rxjs';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { Inject, PLATFORM_ID } from '@angular/core';
-import {ImageLoaderDirective} from "../../gallery/image-loader.directive";
-import {PictureCoordinateDTO} from "../../gallery/images.dto";
-import {environment} from "../../../environments/environment";
+import {ImageLoaderDirective} from "../../../shared/directives/image-loader.directive";
+import {PictureCoordinateDTO} from "../../../core/models/dto/images.dto";
+import {environment} from "../../../../environments/environment";
 
 @Component({
   selector: 'app-travel-list',
@@ -40,7 +40,15 @@ export class TravelListComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.isBrowser) {
-      this.travels$ = this.travelService.getAllTravels();
+      this.travels$ = this.travelService.getAllTravels().pipe(
+        map(travels =>
+          travels.sort((a, b) => {
+            const aDate = a.endDate?.getTime() ?? a.startDate.getTime();
+            const bDate = b.endDate?.getTime() ?? b.startDate.getTime();
+            return bDate-aDate;
+          })
+        )
+      );
     }
   }
 

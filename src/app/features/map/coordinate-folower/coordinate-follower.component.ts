@@ -1,8 +1,8 @@
 import {Component, EventEmitter, Inject, Input, OnInit, Output, PLATFORM_ID, SimpleChanges} from '@angular/core';
 import {MatSlider, MatSliderThumb} from "@angular/material/slider";
-import {MapDataService} from "../map/map-data.service";
+import {MapDataService} from "../../../core/services/map-data.service";
 import {AsyncPipe, isPlatformBrowser} from "@angular/common";
-import {CoordinateDto} from "../map/dto/Coordinate.dto";
+import {CoordinateDto} from "../../../core/models/dto/coordinate.dto";
 import {FormsModule} from "@angular/forms";
 import {first} from "rxjs";
 import {HttpClient} from "@angular/common/http";

@@ -1,13 +1,13 @@
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { AsyncPipe, CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { TravelService } from '../travel.service';
-import { TravelDTO } from '../dto/travel.dto';
+import { TravelService } from '../../../core/services/travel.service';
+import { TravelDTO } from '../../../core/models/dto/travel.dto';
 import { MapComponent } from '../../map/map.component';
 import { GalleryComponent } from '../../gallery/gallery.component';
-import { CoordinateFollowerComponent, CameraFollow } from '../../coordinate-folower/coordinate-follower.component';
-import { PictureCoordinateDTO } from '../../gallery/images.dto';
-import { CoordinateDto } from '../../map/dto/Coordinate.dto';
+import { CoordinateFollowerComponent, CameraFollow } from '../../map/coordinate-folower/coordinate-follower.component';
+import { PictureCoordinateDTO } from '../../../core/models/dto/images.dto';
+import { CoordinateDto } from '../../../core/models/dto/coordinate.dto';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -17,7 +17,6 @@ import { MatButtonModule } from '@angular/material/button';
   standalone: true,
   imports: [
     CommonModule,
-    AsyncPipe,
     MapComponent,
     GalleryComponent,
     CoordinateFollowerComponent,

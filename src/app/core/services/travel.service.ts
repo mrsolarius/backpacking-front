@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, share } from 'rxjs';
-import { environment } from '../../environments/environment';
-import { TravelDTO, TravelInputDTO, mapToTravelDTO, mapToTravelDTOList } from './dto/travel.dto';
+import { environment } from '../../../environments/environment';
+import { TravelDTO, TravelInputDTO, mapToTravelDTO, mapToTravelDTOList } from '../models/dto/travel.dto';
 
 @Injectable({
   providedIn: 'root'

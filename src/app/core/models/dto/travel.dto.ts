@@ -1,6 +1,5 @@
-// src/app/travel/dto/travel.dto.ts
-import { PictureCoordinateDTO } from '../../gallery/images.dto';
-import { CoordinateDto } from '../../map/dto/Coordinate.dto';
+import { PictureCoordinateDTO } from './images.dto';
+import { CoordinateDto } from './coordinate.dto';
 
 export interface TravelInputDTO {
   id: number;

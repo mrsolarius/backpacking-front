@@ -14,13 +14,13 @@ import {
 } from '@angular/core';
 import mapboxgl, { LngLat } from "mapbox-gl";
 import { isPlatformBrowser } from "@angular/common";
-import { environment } from "../../environments/environment";
-import { CoordinateDto } from "./dto/Coordinate.dto";
-import { MapDataService } from "./map-data.service";
-import { GalleryService } from "../gallery/gallery.service";
-import { PictureCoordinateDTO } from "../gallery/images.dto";
+import { environment } from "../../../environments/environment";
+import { CoordinateDto } from "../../core/models/dto/coordinate.dto";
+import { MapDataService } from "../../core/services/map-data.service";
+import { GalleryService } from "../../core/services/gallery.service";
+import { PictureCoordinateDTO } from "../../core/models/dto/images.dto";
 import { MatProgressSpinner } from "@angular/material/progress-spinner";
-import { CameraFollow } from "../coordinate-folower/coordinate-follower.component";
+import { CameraFollow } from "./coordinate-folower/coordinate-follower.component";
 import { Subscription } from "rxjs";
 
 @Component({

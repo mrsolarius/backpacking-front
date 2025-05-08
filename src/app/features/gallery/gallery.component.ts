@@ -1,13 +1,13 @@
 // gallery.component.ts amélioré
 import { Component, EventEmitter, Inject, Input, OnInit, Output, PLATFORM_ID } from '@angular/core';
 import { AsyncPipe, CommonModule, isPlatformBrowser } from "@angular/common";
-import { PictureCoordinateDTO } from "./images.dto";
-import { GalleryService } from "./gallery.service";
+import { PictureCoordinateDTO } from "../../core/models/dto/images.dto";
+import { GalleryService } from "../../core/services/gallery.service";
 import { BehaviorSubject, Observable, distinctUntilChanged, map, switchMap } from "rxjs";
 import { PhotoGalleryModule } from "@twogate/ngx-photo-gallery";
 import { MatIcon } from "@angular/material/icon";
-import { environment } from "../../environments/environment";
-import { ImageLoaderDirective } from "./image-loader.directive";
+import { environment } from "../../../environments/environment";
+import { ImageLoaderDirective } from "../../shared/directives/image-loader.directive";
 
 @Component({
   selector: 'app-gallery',

@@ -25,7 +25,7 @@ export class ImageLoaderDirective implements OnInit {
       // Gérer les erreurs de chargement
       imgElement.addEventListener('error', () => {
         // Remplacer par une image de placeholder
-        imgElement.src = 'assets/images/placeholder.webp';
+        imgElement.src = 'assets/placeholder.webp';
         imgElement.style.filter = 'blur(0)';
       });
     }

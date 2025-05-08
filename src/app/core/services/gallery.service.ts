@@ -6,8 +6,8 @@ import {
   PictureCoordinateDTO,
   PictureCoordinateInputDTO,
   mapToPictureCoordinateDTO
-} from './images.dto';
-import { environment } from '../../environments/environment';
+} from '../models/dto/images.dto';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'

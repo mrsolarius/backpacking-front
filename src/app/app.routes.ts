@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
-import { TravelListComponent } from './travel/travel-list/travel-list.component';
-import { TravelDetailComponent } from './travel/travel-detail/travel-detail.component';
+import { TravelListComponent } from './features/travel/travel-list/travel-list.component';
+import { TravelDetailComponent } from './features/travel/travel-detail/travel-detail.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'travels', pathMatch: 'full' },

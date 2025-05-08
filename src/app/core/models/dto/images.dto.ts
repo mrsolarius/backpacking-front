@@ -1,4 +1,3 @@
-// images.dto.ts amélioré
 export enum ImageResolution {
   LOW = 1,
   MEDIUM = 2,
