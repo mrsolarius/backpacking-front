@@ -47,6 +47,8 @@ export class MapComponent implements OnInit, OnDestroy {
 
   // Gestion des ressources
   private subscriptions: Subscription[] = [];
+  private _updateTimeout?: any;
+  private _lastUpdate: number = 0;
 
   // Stockage des données photos
   private allPhotos: PictureCoordinateDTO[] = [];
@@ -73,7 +75,7 @@ export class MapComponent implements OnInit, OnDestroy {
       if (this.cameraFollow === CameraFollow.ON) {
         this.mapProvider.easeTo({
           center: [value.longitude, value.latitude],
-          zoom: 16,
+          zoom: 14,
           duration: 1000,
           pitch: 20,
         });
@@ -119,6 +121,11 @@ export class MapComponent implements OnInit, OnDestroy {
     this.markerService.removeMarkers(this.visibleMarkers);
     this.visibleMarkers = {};
 
+    // Nettoyer les timeout en attente
+    if (this._updateTimeout) {
+      clearTimeout(this._updateTimeout);
+    }
+
     if (this.map) {
       this.mapProvider.remove();
     }
@@ -145,11 +152,30 @@ export class MapComponent implements OnInit, OnDestroy {
   }
 
   private handleZoomEnd() {
-    this.updateVisibleMarkers();
+    // Utiliser un throttling pour limiter les mises à jour
+    this.throttledUpdateMarkers();
   }
 
   private handleMoveEnd() {
-    this.updateVisibleMarkers();
+    // Utiliser un throttling pour limiter les mises à jour
+    this.throttledUpdateMarkers();
+  }
+
+  // Méthode throttle pour limiter les mises à jour des marqueurs
+  private throttledUpdateMarkers(): void {
+    const now = Date.now();
+    // Limiter à une mise à jour toutes les 200ms pendant les interactions
+    if (!this._lastUpdate || (now - this._lastUpdate) > 200) {
+      this._lastUpdate = now;
+      this.updateVisibleMarkers();
+    } else {
+      // Reporter la mise à jour à plus tard
+      clearTimeout(this._updateTimeout);
+      this._updateTimeout = setTimeout(() => {
+        this._lastUpdate = Date.now();
+        this.updateVisibleMarkers();
+      }, 200);
+    }
   }
 
   // Méthode pour charger les données lorsque le travelId change
@@ -206,18 +232,30 @@ export class MapComponent implements OnInit, OnDestroy {
   private updateVisibleMarkers() {
     if (!this.map || !this.allPhotos.length) return;
 
+    // Ne pas mettre à jour pendant un zoom actif
+    if (this.map.isZooming() || this.map.isMoving()) {
+      // Programmer une mise à jour différée après la fin du zoom/mouvement
+      clearTimeout(this._updateTimeout);
+      this._updateTimeout = setTimeout(() => this.updateVisibleMarkers(), 200);
+      return;
+    }
+
     const currentZoom = this.mapProvider.getZoom();
     const currentBounds = this.mapProvider.getBounds();
 
+    // Limiter le nombre de marqueurs en fonction du niveau de zoom
+    // pour maintenir les performances
+    const MAX_MARKERS = Math.min(100, Math.round(currentZoom * 5));
+
     // Déterminer le mode d'affichage en fonction du zoom
-    const CLUSTER_THRESHOLD = 10;       // Seuil minimum pour afficher des clusters
-    const HYBRID_THRESHOLD = 13;        // Seuil où on commence à montrer les marqueurs individuels
+    const CLUSTER_THRESHOLD = 10;
+    const HYBRID_THRESHOLD = 13;
 
     // Mode 1: Zoom très faible - seulement des clusters
     if (currentZoom < CLUSTER_THRESHOLD) {
       // Supprimer tous les marqueurs individuels
-      this.markerService.removeMarkers(this.visibleMarkers);
-      this.visibleMarkers = {};
+      const visibleIds = new Set<number>();
+      this.markerService.optimizeVisibleMarkers(this.visibleMarkers, visibleIds);
 
       // Activer les couches de clustering si elles ne sont pas déjà activées
       if (!this.clusteringService.isClustered()) {
@@ -235,7 +273,33 @@ export class MapComponent implements OnInit, OnDestroy {
       }
 
       // On identifie les photos isolées qui ne sont pas dans des clusters
-      this.clusteringService.showIsolatedMarkers(currentBounds, currentZoom, this.allPhotos, this.visibleMarkers);
+      const isolatedPhotos = this.allPhotos.filter(photo => {
+        // Vérifier si dans les limites de la carte
+        const isVisible = !isNaN(photo.longitude) && !isNaN(photo.latitude) &&
+          currentBounds.contains([photo.longitude, photo.latitude]);
+
+        if (!isVisible) return false;
+
+        // Vérifier si isolée
+        return this.clusteringService.isPhotoIsolated(photo, currentZoom, this.allPhotos);
+      });
+
+      // Limiter le nombre pour les performances
+      const limitedIsolatedPhotos = isolatedPhotos.slice(0, MAX_MARKERS);
+
+      // Construire ensemble des IDs visibles
+      const visibleIds = new Set(limitedIsolatedPhotos.map(p => p.id));
+
+      // Optimiser les marqueurs (supprimer ceux hors écran)
+      this.markerService.optimizeVisibleMarkers(this.visibleMarkers, visibleIds);
+
+      // Ajouter les nouveaux marqueurs isolés
+      limitedIsolatedPhotos.forEach(photo => {
+        if (!this.visibleMarkers[photo.id]) {
+          this.addSingleMarker(photo);
+        }
+      });
+
       return;
     }
 
@@ -245,27 +309,37 @@ export class MapComponent implements OnInit, OnDestroy {
     }
 
     // Identifier les photos dans la zone visible
-    const visiblePhotos = this.allPhotos.filter(photo => {
+    let visiblePhotos = this.allPhotos.filter(photo => {
       // Vérifier si les coordonnées sont valides et dans les limites de la carte visible
       return !isNaN(photo.longitude) && !isNaN(photo.latitude) &&
         currentBounds.contains([photo.longitude, photo.latitude]);
     });
 
-    // Déterminer les marqueurs à supprimer et à ajouter
-    const currentIds = new Set(visiblePhotos.map(p => p.id));
-    const existingIds = new Set(Object.keys(this.visibleMarkers).map(Number));
+    // Limiter le nombre de marqueurs si nécessaire pour maintenir les performances
+    if (visiblePhotos.length > MAX_MARKERS) {
+      // Stratégie de sélection: prioriser les photos récentes ou les plus proches du centre
+      const center = currentBounds.getCenter();
 
-    // Supprimer les marqueurs qui ne sont plus visibles
-    for (const id of existingIds) {
-      if (!currentIds.has(id)) {
-        this.visibleMarkers[id].marker.remove();
-        delete this.visibleMarkers[id];
-      }
+      // Trier par distance au centre (plus proches d'abord)
+      visiblePhotos.sort((a, b) => {
+        const distA = Math.pow(a.longitude - center.lng, 2) + Math.pow(a.latitude - center.lat, 2);
+        const distB = Math.pow(b.longitude - center.lng, 2) + Math.pow(b.latitude - center.lat, 2);
+        return distA - distB;
+      });
+
+      // Prendre seulement MAX_MARKERS photos
+      visiblePhotos = visiblePhotos.slice(0, MAX_MARKERS);
     }
+
+    // Construire ensemble des IDs visibles
+    const visibleIds = new Set(visiblePhotos.map(p => p.id));
+
+    // Optimiser les marqueurs (supprimer ceux hors écran)
+    this.markerService.optimizeVisibleMarkers(this.visibleMarkers, visibleIds);
 
     // Ajouter les nouveaux marqueurs visibles
     visiblePhotos.forEach(photo => {
-      if (!existingIds.has(photo.id)) {
+      if (!this.visibleMarkers[photo.id]) {
         this.addSingleMarker(photo);
       }
     });

@@ -16,6 +16,14 @@ export interface IMapProvider {
   getBounds(): LngLatBounds;
   getZoom(): number;
   remove(): void;
+
+  // Nouvelles méthodes utiles pour les optimisations de performance
+  isZooming(): boolean;
+  isMoving(): boolean;
+
+  // Méthodes pour l'optimisation du rendu
+  optimizeForLowPerformance(): void;
+  restorePerformance(): void;
 }
 
 export interface MapboxInitOptions {

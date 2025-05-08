@@ -7,6 +7,25 @@
   border-radius: var(--border-radius, 8px);
   overflow: hidden;
   position: relative;
+  /* Forcer l'accélération matérielle pour la carte */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* Optimiser les animations */
+  will-change: transform;
+}
+
+/* Classes de base avec optimisations */
+.marker-base {
+  cursor: pointer;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+  /* Optimisations de performance */
+  contain: layout style paint; /* Isolation stricte pour les performances */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* Indiquer au moteur de rendu que transform et opacity vont changer */
+  will-change: transform, opacity;
 }
 
 .me-marker {
@@ -21,6 +40,16 @@
   animation: pulse 1.5s infinite;
   position: relative;
   z-index: 999;
+  /* Optimisations de performance */
+  contain: layout style paint;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+
+  /* Désactiver l'animation lors du zoom pour réduire la charge CPU */
+  .map-zooming & {
+    animation-play-state: paused;
+  }
 }
 
 @keyframes pulse {
@@ -51,34 +80,36 @@
   background-color: rgba(255, 255, 255, 0.8);
   z-index: 1000;
   border-radius: var(--border-radius, 8px);
+  /* Optimisation de performance pour les transitions */
+  transition: opacity 0.3s ease;
 }
 
 /* Styles pour les marqueurs optimisés */
 .photo-marker {
+  @extend .marker-base;
   background-size: cover;
   background-position: center;
-  cursor: pointer;
   width: 30px;
   height: 30px;
-  border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-  transition: transform 0.2s ease, border-radius 0.2s ease;
-  /* Optimisation GPU - forcer le rendu sur GPU */
-  transform: translate3d(0, 0, 0);
-  /* Réduire la qualité des images si l'appareil a des performances limitées */
+  transition: transform 0.2s ease, border-radius 0.2s ease, box-shadow 0.2s ease;
+  /* Optimisations GPU supplémentaires */
   image-rendering: auto;
-  /* Prévenir le rendu des marqueurs hors écran */
-  will-change: transform;
-  backface-visibility: hidden;
+
+  /* Variante de qualité réduite pour les zooms et déplacements */
+  .map-zooming &, .map-moving & {
+    transition: none;
+    box-shadow: none;
+    /* Réduire la qualité pendant le zoom pour de meilleures performances */
+    image-rendering: optimizeSpeed;
+  }
 
   &:hover {
-    transform: scale(1.1) translate3d(0, 0, 0);
+    transform: scale(1.1) translateZ(0);
     z-index: 10;
   }
 }
 
-/* Style pour le marqueur personnel */
+/* Style pour le marqueur personnel optimisé */
 .me-marker {
   width: 35px;
   height: 35px;
@@ -87,15 +118,21 @@
   border: 3px solid white;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
   cursor: pointer;
-  transform: translate3d(0, 0, 0);
+  transform: translateZ(0);
   transition: transform 0.3s ease;
+
+  /* Désactiver les transitions coûteuses pendant le zoom */
+  .map-zooming &, .map-moving & {
+    transition: none;
+    box-shadow: none;
+  }
 }
 
 .me-marker:hover {
-  transform: scale(1.15) translate3d(0, 0, 0);
+  transform: scale(1.15) translateZ(0);
 }
 
-/* Styles de cluster améliorés */
+/* Styles de cluster améliorés avec performances */
 .mapboxgl-cluster {
   border-radius: 50%;
   font-weight: bold;
@@ -104,18 +141,38 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  /* Optimisations de performance */
+  contain: layout style paint;
+  transform: translateZ(0);
+  will-change: transform;
+
+  /* Désactiver les transitions pendant le zoom */
+  .map-zooming &, .map-moving & {
+    transition: none !important;
+    box-shadow: none !important;
+  }
 }
 
 .mapboxgl-cluster:hover {
-  transform: scale(1.1);
+  transform: scale(1.1) translateZ(0);
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 }
 
-/* Styles pour les popups */
+/* Styles pour les popups avec optimisations */
 .map-popup {
   padding: 5px;
   max-width: 180px;
+  /* Optimisations */
+  contain: content;
+  transform: translateZ(0);
+}
+
+.map-popup-container {
+  /* Suppression du popup pendant le zoom */
+  .map-zooming &, .map-moving & {
+    display: none !important;
+  }
 }
 
 .popup-image {
@@ -123,6 +180,9 @@
   height: auto;
   border-radius: 4px;
   margin-bottom: 5px;
+  /* Optimiser pour éviter les repaints */
+  contain: strict;
+  will-change: opacity;
 }
 
 .popup-date {
@@ -131,14 +191,14 @@
   color: #333;
 }
 
-/* Animation d'apparition modifiée pour être moins intensive */
+/* Animation d'apparition optimisée pour être moins intensive */
 @keyframes dropIn {
   0% {
-    transform: translateY(-5px);
+    transform: translateY(-5px) translateZ(0);
     opacity: 0;
   }
   100% {
-    transform: translateY(0);
+    transform: translateY(0) translateZ(0);
     opacity: 1;
   }
 }
@@ -154,9 +214,31 @@
 
 .marker-animation {
   animation: dropIn 0.3s ease forwards;
+  /* Désactiver pendant le zoom */
+  .map-zooming &, .map-moving & {
+    animation: none !important;
+  }
 }
 
 /* Animation pour le spinner */
 .mat-spinner {
   animation: fadeIn 0.3s ease;
+  /* Optimisations */
+  will-change: opacity;
+}
+
+/* État de l'application pendant le zoom ou le mouvement */
+.map-zooming, .map-moving {
+  .map-popup,
+  .popup-container,
+  .mapboxgl-popup {
+    display: none !important;
+  }
+
+  /* Simplifier les marqueurs pendant le zoom pour améliorer les performances */
+  .photo-marker, .me-marker, .mapboxgl-cluster {
+    box-shadow: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
 }

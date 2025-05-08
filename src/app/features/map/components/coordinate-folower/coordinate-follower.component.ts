@@ -120,6 +120,10 @@ export class CoordinateFollowerComponent implements OnInit {
   private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 heures en millisecondes
   private readonly API_KEY = '102011f938be0f23a8dd32e9073a96ca';
 
+  // Optimisation: Limiter les requêtes météo
+  private weatherDebounceTimeout?: any;
+  private isSliderDragging = false;
+
   constructor(
     @Inject(PLATFORM_ID) platformId: any,
     private mapDataService: MapDataService,
@@ -170,6 +174,44 @@ export class CoordinateFollowerComponent implements OnInit {
     const coordinate = this.coordinates[selectedCoordinate];
     this.sliderChange.emit(coordinate);
 
+    // Optimisation: Éviter les requêtes météo excessives pendant le glissement du slider
+    if (this.weatherDebounceTimeout) {
+      clearTimeout(this.weatherDebounceTimeout);
+    }
+
+    // Si le slider est en cours de glissement, attendre qu'il s'arrête pour mettre à jour la météo
+    if (this.isSliderDragging) {
+      this.weatherDebounceTimeout = setTimeout(() => {
+        this.fetchWeatherData(coordinate);
+      }, 300);
+    } else {
+      this.fetchWeatherData(coordinate);
+    }
+  }
+
+  // Nouvelle méthode pour suivre le début du glissement
+  onSliderDragStart() {
+    this.isSliderDragging = true;
+  }
+
+  // Nouvelle méthode pour suivre la fin du glissement
+  onSliderDragEnd() {
+    this.isSliderDragging = false;
+    if (this.weatherDebounceTimeout) {
+      clearTimeout(this.weatherDebounceTimeout);
+    }
+
+    // Mettre à jour la météo quand le glissement est terminé
+    if (this.coordinates && this.coordinates.length > 0) {
+      const coordinate = this.coordinates[this.selectedCoordinate];
+      this.fetchWeatherData(coordinate);
+    }
+  }
+
+  /**
+   * Méthode optimisée pour récupérer les données météo
+   */
+  private fetchWeatherData(coordinate: CoordinateDto) {
     this.getHistoricalWeatherData(
       coordinate.latitude,
       coordinate.longitude,
@@ -203,6 +245,13 @@ export class CoordinateFollowerComponent implements OnInit {
               main: {
                 temp: historicalData.temp,
                 humidity: historicalData.humidity
+              },
+              wind: {
+                speed: historicalData.wind_speed,
+                deg: historicalData.wind_deg
+              },
+              clouds: {
+                all: historicalData.clouds
               },
               name: data.timezone.split('/').pop().replace('_', ' ') // Extraction du nom de la ville à partir du fuseau horaire
             };

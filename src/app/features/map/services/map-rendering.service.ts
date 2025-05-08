@@ -1,4 +1,3 @@
-
 import { Injectable } from '@angular/core';
 import { LngLat, LngLatBounds, Map as MapboxMap } from 'mapbox-gl';
 import { IMapProvider, MapboxInitOptions, FitBoundsOptions, EaseToOptions, FogOptions } from '../interfaces/map-provider.interface';
@@ -9,6 +8,10 @@ import { environment } from '../../../../environments/environment';
 })
 export class MapRenderingService implements IMapProvider {
   private map?: MapboxMap;
+  private isCurrentlyZooming = false;
+  private isCurrentlyMoving = false;
+  private originalStyle?: string;
+  private lowPerformanceMode = false;
 
   constructor() {}
 
@@ -31,12 +34,135 @@ export class MapRenderingService implements IMapProvider {
 
     const mapOptions = { ...defaultOptions, ...options } as MapboxInitOptions;
 
+    // Sauvegarder le style original pour la restauration
+    this.originalStyle = mapOptions.style || defaultOptions.style;
+
     this.map = new mapboxgl.Map({
       container: containerId,
-      ...mapOptions
+      ...mapOptions,
+      fadeDuration: 0, // Désactiver les fondus pour améliorer les performances
+      renderWorldCopies: false // Désactiver le rendu des copies monde pour les perfs
     });
 
+    // Configurer les écouteurs d'événements pour suivre l'état du zoom
+    this.setupPerformanceTracking();
+
     return this.map;
+  }
+
+  /**
+   * Configure les écouteurs d'événements pour suivre les performances
+   */
+  private setupPerformanceTracking(): void {
+    if (!this.map) return;
+
+    // Suivi du zoom pour optimiser les performances
+    this.map.on('zoomstart', () => {
+      this.isCurrentlyZooming = true;
+      if (this.map) {
+        this.map.getContainer().classList.add('map-zooming');
+      }
+    });
+
+    this.map.on('zoomend', () => {
+      this.isCurrentlyZooming = false;
+      if (this.map) {
+        // Petit délai pour éviter les flickers
+        setTimeout(() => {
+          this.map?.getContainer().classList.remove('map-zooming');
+        }, 200);
+      }
+    });
+
+    // Suivi du mouvement pour optimiser les performances
+    this.map.on('movestart', () => {
+      this.isCurrentlyMoving = true;
+      if (this.map) {
+        this.map.getContainer().classList.add('map-moving');
+      }
+    });
+
+    this.map.on('moveend', () => {
+      this.isCurrentlyMoving = false;
+      if (this.map) {
+        // Petit délai pour éviter les flickers
+        setTimeout(() => {
+          this.map?.getContainer().classList.remove('map-moving');
+        }, 200);
+      }
+    });
+  }
+
+  /**
+   * Indique si la carte est actuellement en train de zoomer
+   */
+  isZooming(): boolean {
+    if (!this.map) return false;
+    return this.isCurrentlyZooming || this.map.isZooming();
+  }
+
+  /**
+   * Indique si la carte est actuellement en mouvement
+   */
+  isMoving(): boolean {
+    if (!this.map) return false;
+    return this.isCurrentlyMoving || this.map.isMoving();
+  }
+
+  /**
+   * Optimise le rendu pour les systèmes à faible performance
+   */
+  optimizeForLowPerformance(): void {
+    if (!this.map || this.lowPerformanceMode) return;
+
+    this.lowPerformanceMode = true;
+
+    // Utiliser un style plus léger
+    const simplifiedStyle = 'mapbox://styles/mapbox/light-v11'; // Style plus léger
+    this.map.setStyle(simplifiedStyle);
+
+    // Désactiver les effets 3D et d'ombrage
+    this.map.setTerrain(null);
+    this.map.setFog({});
+
+    // Réduire la qualité de rendu
+    if (this.map.getCanvas()) {
+      const canvas = this.map.getCanvas();
+      canvas.style.imageRendering = 'optimizeSpeed';
+    }
+
+    // Désactiver les animations
+    (this.map as any).transform.cameraEasing = (t: number) => 1; // Remplace l'animation par un déplacement immédiat
+  }
+
+  /**
+   * Restaure les paramètres de performance normaux
+   */
+  restorePerformance(): void {
+    if (!this.map || !this.lowPerformanceMode) return;
+
+    this.lowPerformanceMode = false;
+
+    // Restaurer le style original
+    if (this.originalStyle) {
+      this.map.setStyle(this.originalStyle);
+    }
+
+    // Réactiver le terrain 3D
+    this.addTerrain();
+
+    // Réactiver le ciel et le brouillard
+    this.addSky();
+
+    // Restaurer la qualité de rendu
+    if (this.map.getCanvas()) {
+      const canvas = this.map.getCanvas();
+      canvas.style.imageRendering = 'auto';
+    }
+
+    // Restaurer les animations standard
+    // Restauration de l'animation d'Easing par défaut
+    delete (this.map as any).transform.cameraEasing;
   }
 
   /**
@@ -66,6 +192,12 @@ export class MapRenderingService implements IMapProvider {
    */
   easeTo(options: EaseToOptions): void {
     if (!this.map) return;
+
+    // Si on est en mode faible performance, réduire la durée de l'animation
+    if (this.lowPerformanceMode && options.duration && options.duration > 500) {
+      options.duration = 500;
+    }
+
     this.map.easeTo(options);
   }
 
@@ -73,7 +205,7 @@ export class MapRenderingService implements IMapProvider {
    * Ajoute un ciel à la carte
    */
   addSky(): void {
-    if (!this.map) return;
+    if (!this.map || this.lowPerformanceMode) return;
 
     this.map.setFog({
       color: 'rgb(186, 210, 235)', // Lower atmosphere
@@ -88,7 +220,7 @@ export class MapRenderingService implements IMapProvider {
    * Ajoute un terrain 3D à la carte
    */
   addTerrain(): void {
-    if (!this.map) return;
+    if (!this.map || this.lowPerformanceMode) return;
 
     this.map.addSource('mapbox-dem', {
       'type': 'raster-dem',
@@ -104,7 +236,7 @@ export class MapRenderingService implements IMapProvider {
    * Définit le brouillard sur la carte
    */
   setFog(options: FogOptions): void {
-    if (!this.map) return;
+    if (!this.map || this.lowPerformanceMode) return;
     this.map.setFog(options);
   }
 

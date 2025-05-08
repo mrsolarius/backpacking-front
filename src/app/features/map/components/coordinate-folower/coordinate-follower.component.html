@@ -19,6 +19,8 @@
         matSliderThumb
         [(ngModel)]="selectedCoordinate"
         (valueChange)="onSliderChange($event)"
+        (dragStart)="onSliderDragStart()"
+        (dragEnd)="onSliderDragEnd()"
         aria-label="Sélectionner une position dans le temps">
     </mat-slider>
   </section>
@@ -29,12 +31,14 @@
       <img
         class="weather-icon"
         [src]="'/assets/animated/' + weatherIconMap[weatherData.weather[0].id!]"
-        [alt]="'Conditions météo: ' + (weatherData.weather[0].description || 'temps actuel')">
+        [alt]="'Conditions météo: ' + (weatherData.weather[0].description || 'temps actuel')"
+        >
     } @else {
       <img
         class="weather-icon"
         [src]="'/assets/animated/'+ getDayOrNight(coordinates[selectedCoordinate].date)+'.svg'"
-        [alt]="getDayOrNight(coordinates[selectedCoordinate].date) === 'day' ? 'Jour' : 'Nuit'">
+        [alt]="getDayOrNight(coordinates[selectedCoordinate].date) === 'day' ? 'Jour' : 'Nuit'"
+        >
     }
 
     <article class="date-container">
@@ -116,7 +120,8 @@
     <img
       class="weather-icon"
       [src]="'/assets/animated/'+ getDayOrNight(getNow())+'.svg'"
-      [alt]="getDayOrNight(getNow()) === 'day' ? 'Jour' : 'Nuit'">
+      [alt]="getDayOrNight(getNow()) === 'day' ? 'Jour' : 'Nuit'"
+      loading="lazy">
 
     <article class="date-container">
       <time

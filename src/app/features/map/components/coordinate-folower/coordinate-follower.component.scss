@@ -6,6 +6,7 @@
   flex-direction: column;
   align-items: center;
   gap:1rem;
+  contain: layout style paint; /* Isolation pour optimisation */
 }
 
 .form-container{
@@ -14,12 +15,16 @@
   flex-direction: column;
   width: 100%;
   z-index: 10;
+  /* Optimisations de performance */
+  contain: layout style;
+  will-change: transform;
 }
 
 .slider{
   margin: 0 1rem ;
   width: calc(100% - 2rem);
   transform: translateY(-1rem);
+  contain: layout; /* Optimisation */
 }
 
 .spacer{
@@ -32,6 +37,9 @@
   justify-content: center;
   align-items: center;
   width: 100%;
+  /* Optimisation */
+  will-change: contents;
+  contain: layout style;
 
   .weather-icon{
     width: 25%;
@@ -43,6 +51,8 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
+    /* Optimisation */
+    contain: content;
 
     .day-name{
       font-size: 1.2rem;
@@ -59,7 +69,6 @@
       span{
         font-size: 0.75rem;
       }
-
     }
   }
 }
@@ -69,9 +78,10 @@
   gap: 1rem;
   justify-content: center;
   align-items: center;
+  /* Optimisation */
+  contain: layout style;
 
   .metric-container{
-
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -97,4 +107,17 @@
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   border: 0;
+}
+
+/* Script pour détecter quand les images sont complètement chargées */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Optimiser le rendu des icônes */
+.mat-icon {
+  /* Utilisation de l'accélération GPU */
+  transform: translateZ(0);
+  will-change: transform;
 }
