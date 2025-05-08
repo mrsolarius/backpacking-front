@@ -5,12 +5,13 @@ import { TravelService } from '../../../core/services/travel.service';
 import { TravelDTO } from '../../../core/models/dto/travel.dto';
 import { MapComponent } from '../../map/components/map/map.component';
 import { GalleryComponent } from '../../gallery/gallery.component';
-import { CoordinateFollowerComponent, CameraFollow } from '../../map/components/coordinate-folower/coordinate-follower.component';
+import { CoordinateFollowerComponent } from '../../map/components/coordinate-folower/coordinate-follower.component';
 import { PictureCoordinateDTO } from '../../../core/models/dto/images.dto';
 import { CoordinateDto } from '../../../core/models/dto/coordinate.dto';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import {CameraFollow} from "../../map/models/camera-follow.enum";
 
 @Component({
   selector: 'app-travel-detail',

@@ -1,0 +1,25 @@
+<section class="form-container">
+  <h2 class="visually-hidden">Contrôles de la caméra</h2>
+  <mat-checkbox
+    (change)="onCameraFollowChanged($event)"
+    [checked]="true"
+    color="primary"
+    aria-label="Activer le suivi automatique de la caméra">
+    Activer le suivi de la caméra
+  </mat-checkbox>
+  <mat-slider
+    class="slider"
+    min="0"
+    [max]="coordinates.length > 0 ? coordinates.length - 1 : 0"
+    step="1"
+    [displayWith]="formatLabel.bind(this)"
+    aria-label="Chronologie du parcours">
+    <input
+      matSliderThumb
+      [(ngModel)]="selectedIndex"
+      (valueChange)="onValueChange($event)"
+      (dragStart)="onDragStart()"
+      (dragEnd)="onDragEnd()"
+      aria-label="Sélectionner une position dans le temps">
+  </mat-slider>
+</section>

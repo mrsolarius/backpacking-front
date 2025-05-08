@@ -32,11 +32,11 @@
           </app-gallery>
         </mat-tab>
         <mat-tab label="Suivi">
-          <app-coordinate-folower
+          <app-coordinate-follower
             [travelId]="travelId"
             (sliderChange)="coordinateSelected($event)"
             (cameraFollowChange)="cameraFollowChange($event)">
-          </app-coordinate-folower>
+          </app-coordinate-follower>
         </mat-tab>
         <mat-tab label="Infos">
           @if (travel) {

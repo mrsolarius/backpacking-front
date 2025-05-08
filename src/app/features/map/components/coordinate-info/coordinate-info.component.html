@@ -1,0 +1,35 @@
+<article class="date-container">
+  <time
+    class="day-name"
+    [attr.datetime]="coordinate ? coordinate.date.toISOString() : getNow().toISOString()">
+    {{
+      (coordinate ? coordinate.date : getNow()).toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      })
+    }}
+  </time>
+
+  <figure class="ico-container">
+    <mat-icon color="primary" aria-hidden="true">satellite_alt</mat-icon>
+    <figcaption>
+          <span>
+            &nbsp;lat: {{ coordinate ? coordinate.latitude.toFixed(6) : '--' }}
+            long: {{ coordinate ? coordinate.longitude.toFixed(6) : '--' }}
+          </span>
+    </figcaption>
+  </figure>
+
+  @if (locationName) {
+    <figure class="ico-container">
+      <mat-icon color="primary" aria-hidden="true">location_on</mat-icon>
+      <figcaption>
+        <span>&nbsp;{{ locationName }}</span>
+      </figcaption>
+    </figure>
+  }
+</article>

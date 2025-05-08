@@ -1,26 +1,26 @@
 :host {
   width: 100%;
-  height: 100%;
   display: flex;
-  overflow: hidden;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  contain: layout style paint;
-}
-
-.weather-container {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  will-change: contents;
   contain: layout style;
 }
 
-.spacer {
-  height: 2rem;
+.form-container {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  width: 100%;
+  z-index: 10;
+  contain: layout style;
+  will-change: transform;
+}
+
+.slider {
+  margin: 0 1rem;
+  width: calc(100% - 2rem);
+  transform: translateY(-1rem);
+  contain: layout;
 }
 
 .visually-hidden {
@@ -32,9 +32,4 @@
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   border: 0;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }

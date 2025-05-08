@@ -1,0 +1,29 @@
+:host{
+  width: 100%;
+}
+
+.date-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  contain: content;
+}
+
+.day-name {
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-transform: capitalize;
+  margin: 0;
+}
+
+.ico-container {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0;
+
+  span {
+    font-size: 0.75rem;
+  }
+}

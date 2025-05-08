@@ -1,0 +1,18 @@
+<section class="weather-container">
+  <h2 class="visually-hidden">{{ weatherData ? 'Conditions météorologiques' : 'Conditions météorologiques actuelles' }}</h2>
+  @if (weatherData) {
+    <img
+      class="weather-icon"
+      [src]="'/assets/animated/' + getWeatherIcon(weatherData)"
+      [alt]="'Conditions météo: ' + (weatherData.weather[0].description || 'temps actuel')"
+      loading="lazy">
+  } @else {
+    <img
+      class="weather-icon"
+      [src]="'/assets/animated/'+ timeOfDay +'.svg'"
+      [alt]="timeOfDay === 'day' ? 'Jour' : 'Nuit'"
+      loading="lazy">
+  }
+</section>
+
+<div class="spacer" aria-hidden="true"></div>

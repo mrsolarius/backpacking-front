@@ -1,26 +1,36 @@
 :host {
   width: 100%;
-  height: 100%;
   display: flex;
-  overflow: hidden;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  contain: layout style paint;
 }
 
-.weather-container {
+.big-weather-metrics {
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
   justify-content: center;
   align-items: center;
-  width: 100%;
-  will-change: contents;
   contain: layout style;
+  margin: 1rem 0;
 }
 
-.spacer {
-  height: 2rem;
+.metric-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  min-width: 5rem;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.metric-icon {
+  transform: scale(2);
+  will-change: transform;
 }
 
 .visually-hidden {
@@ -32,9 +42,4 @@
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   border: 0;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }

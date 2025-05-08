@@ -18,7 +18,6 @@ import {MatProgressSpinner} from "@angular/material/progress-spinner";
 import {Subscription} from "rxjs";
 import {PictureCoordinateDTO} from "../../../../core/models/dto/images.dto";
 import {CoordinateDto} from "../../../../core/models/dto/coordinate.dto";
-import {CameraFollow} from "../coordinate-folower/coordinate-follower.component";
 import {MapDataService} from "../../../../core/services/map-data.service";
 import {GalleryService} from "../../../../core/services/gallery.service";
 import {CLUSTERING_SERVICE, MAP_ANIMATION_SERVICE, MAP_PROVIDER, MARKER_SERVICE} from "../../tokens/map.token";
@@ -27,6 +26,7 @@ import {IMapMarkerService} from "../../interfaces/map-marker.interface";
 import {IMapClusteringService} from "../../interfaces/map-clustering.interface";
 import {IMapAnimationService} from "../../interfaces/map-animation.interface";
 import {MAP_PROVIDERS} from "../../providers/map.providers";
+import {CameraFollow} from "../../models/camera-follow.enum";
 
 @Component({
   selector: 'app-map',

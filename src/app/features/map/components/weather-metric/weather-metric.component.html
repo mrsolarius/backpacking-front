@@ -1,0 +1,54 @@
+<section class="big-weather-metrics">
+  <h2 class="visually-hidden">{{ weatherData ? 'Métriques météorologiques' : 'Métriques météorologiques non disponibles' }}</h2>
+  @if (weatherData) {
+    <figure class="metric-container">
+      <mat-icon class="metric-icon" color="primary" aria-hidden="true">thermostat</mat-icon>
+      <figcaption class="metric-value">
+        {{ weatherData.main.temp }}°C
+      </figcaption>
+    </figure>
+    <figure class="metric-container">
+      <mat-icon class="metric-icon" color="primary" aria-hidden="true">opacity</mat-icon>
+      <figcaption class="metric-value">
+        {{ weatherData.main.humidity }}%
+      </figcaption>
+    </figure>
+    <figure class="metric-container">
+      <mat-icon class="metric-icon" color="primary" aria-hidden="true">air</mat-icon>
+      <figcaption class="metric-value">
+        {{ weatherData.wind.speed }} m/s
+      </figcaption>
+    </figure>
+    <figure class="metric-container">
+      <mat-icon class="metric-icon" color="primary" aria-hidden="true">compress</mat-icon>
+      <figcaption class="metric-value">
+        {{ weatherData.main.pressure }} hPa
+      </figcaption>
+    </figure>
+  } @else {
+    <figure class="metric-container">
+      <mat-icon class="metric-icon" color="primary" aria-hidden="true">thermostat</mat-icon>
+      <figcaption class="metric-value">
+        --°C
+      </figcaption>
+    </figure>
+    <figure class="metric-container">
+      <mat-icon class="metric-icon" color="primary" aria-hidden="true">opacity</mat-icon>
+      <figcaption class="metric-value">
+        --%
+      </figcaption>
+    </figure>
+    <figure class="metric-container">
+      <mat-icon class="metric-icon" color="primary" aria-hidden="true">air</mat-icon>
+      <figcaption class="metric-value">
+        -- m/s
+      </figcaption>
+    </figure>
+    <figure class="metric-container">
+      <mat-icon class="metric-icon" color="primary" aria-hidden="true">compress</mat-icon>
+      <figcaption class="metric-value">
+        -- hPa
+      </figcaption>
+    </figure>
+  }
+</section>

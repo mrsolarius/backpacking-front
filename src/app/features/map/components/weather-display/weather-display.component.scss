@@ -1,12 +1,8 @@
 :host {
   width: 100%;
-  height: 100%;
   display: flex;
-  overflow: hidden;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  contain: layout style paint;
 }
 
 .weather-container {
@@ -17,6 +13,11 @@
   width: 100%;
   will-change: contents;
   contain: layout style;
+}
+
+.weather-icon {
+  width: 25%;
+  transform: scale(2);
 }
 
 .spacer {
@@ -32,9 +33,4 @@
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   border: 0;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
