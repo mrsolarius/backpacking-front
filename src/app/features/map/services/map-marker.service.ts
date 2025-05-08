@@ -89,37 +89,6 @@ export class MapMarkerService implements IMapMarkerService {
   }
 
   /**
-   * Anime le mouvement d'un marqueur vers une nouvelle position
-   */
-  animateMarkerMovement(marker: Marker, target: LngLat, duration: number): void {
-    const start = performance.now();
-    const startPosition = marker.getLngLat();
-    const deltaPosition = {
-      lng: target.lng - startPosition.lng,
-      lat: target.lat - startPosition.lat
-    };
-
-    const animateStep = (timestamp: number) => {
-      const elapsed = timestamp - start;
-      const progress = Math.min(elapsed / duration, 1);
-
-      // Fonction d'interpolation pour un mouvement plus fluide
-      const easeValue = this.easeInOutCubic(progress);
-
-      const currentLng = startPosition.lng + deltaPosition.lng * easeValue;
-      const currentLat = startPosition.lat + deltaPosition.lat * easeValue;
-
-      marker.setLngLat([currentLng, currentLat]);
-
-      if (progress < 1) {
-        requestAnimationFrame(animateStep);
-      }
-    };
-
-    requestAnimationFrame(animateStep);
-  }
-
-  /**
    * Met en évidence un marqueur spécifique
    */
   highlightMarker(markerId: number, markers: Record<string, { marker: Marker, element: HTMLDivElement }>): void {
@@ -214,12 +183,5 @@ export class MapMarkerService implements IMapMarkerService {
    */
   removeMarkers(markers: Record<string, { marker: Marker, element: HTMLDivElement }>): void {
     Object.values(markers).forEach(({ marker }) => marker.remove());
-  }
-
-  /**
-   * Fonction d'atténuation cubique pour les animations
-   */
-  private easeInOutCubic(x: number): number {
-    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
   }
 }

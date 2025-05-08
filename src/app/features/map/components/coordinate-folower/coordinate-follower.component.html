@@ -1,21 +1,47 @@
 @if(isBrowser && coordinates.length > 0) {
-  <div class="form-container">
-    <mat-checkbox (change)="cameraFollowChanged($event)" [checked]="true" color="primary">Activer le suivi de la caméra
+  <section class="form-container">
+    <h2 class="visually-hidden">Contrôles de la caméra</h2>
+    <mat-checkbox
+      (change)="cameraFollowChanged($event)"
+      [checked]="true"
+      color="primary"
+      aria-label="Activer le suivi automatique de la caméra">
+      Activer le suivi de la caméra
     </mat-checkbox>
-    <mat-slider class="slider" min="0" [max]="coordinates.length-1" step="1" [displayWith]="formatLabel.bind(this)">
-      <input matSliderThumb [(ngModel)]="selectedCoordinate" (valueChange)="onSliderChange($event)">
+    <mat-slider
+      class="slider"
+      min="0"
+      [max]="coordinates.length-1"
+      step="1"
+      [displayWith]="formatLabel.bind(this)"
+      aria-label="Chronologie du parcours">
+      <input
+        matSliderThumb
+        [(ngModel)]="selectedCoordinate"
+        (valueChange)="onSliderChange($event)"
+        aria-label="Sélectionner une position dans le temps">
     </mat-slider>
-  </div>
-  <div class="weather-container">
+  </section>
+
+  <section class="weather-container">
+    <h2 class="visually-hidden">Conditions météorologiques</h2>
     @if (weatherData) {
-      <img class="weather-icon" [src]="'/assets/animated/' + weatherIconMap[weatherData.weather[0].id!] "
-           alt="Weather icon">
+      <img
+        class="weather-icon"
+        [src]="'/assets/animated/' + weatherIconMap[weatherData.weather[0].id!]"
+        [alt]="'Conditions météo: ' + (weatherData.weather[0].description || 'temps actuel')">
     } @else {
-      <img class="weather-icon" [src]="'/assets/animated/'+ getDayOrNight(coordinates[selectedCoordinate].date)+'.svg'"
-           alt="Weather icon">
+      <img
+        class="weather-icon"
+        [src]="'/assets/animated/'+ getDayOrNight(coordinates[selectedCoordinate].date)+'.svg'"
+        [alt]="getDayOrNight(coordinates[selectedCoordinate].date) === 'day' ? 'Jour' : 'Nuit'">
     }
-    <div class="date-container">
-      <h2 class="day-name">{{
+
+    <article class="date-container">
+      <time
+        class="day-name"
+        [attr.datetime]="coordinates[selectedCoordinate].date.toISOString()">
+        {{
           coordinates[selectedCoordinate].date.toLocaleDateString('fr-FR', {
             weekday: 'long',
             day: '2-digit',
@@ -24,48 +50,79 @@
             minute: '2-digit',
             second: '2-digit'
           })
-        }}</h2>
-      <div class="ico-container">
-        <mat-icon color="primary">satellite_alt</mat-icon>
-        <span>&nbsp;lat: {{ coordinates[selectedCoordinate].latitude }}
-          long:{{ coordinates[selectedCoordinate].longitude }}</span>
-      </div>
+        }}
+      </time>
+
+      <figure class="ico-container">
+        <mat-icon color="primary" aria-hidden="true">satellite_alt</mat-icon>
+        <figcaption>
+          <span>
+            &nbsp;lat: {{ coordinates[selectedCoordinate].latitude.toFixed(6) }}
+            long: {{ coordinates[selectedCoordinate].longitude.toFixed(6) }}
+          </span>
+        </figcaption>
+      </figure>
+
       @if (weatherData) {
-        <div class="ico-container">
-          <mat-icon color="primary">location_on</mat-icon>
-          <span>&nbsp;{{ weatherData.name }}</span>
-        </div>
+        <figure class="ico-container">
+          <mat-icon color="primary" aria-hidden="true">location_on</mat-icon>
+          <figcaption>
+            <span>&nbsp;{{ weatherData.name }}</span>
+          </figcaption>
+        </figure>
       }
-    </div>
-  </div>
-  <div class="spacer"></div>
+    </article>
+  </section>
+
+  <div class="spacer" aria-hidden="true"></div>
+
   @if (weatherData) {
-    <div class="big-weather-metrics">
-      <div class="metric-container">
-        <mat-icon class="metric-icon" color="primary">thermostat</mat-icon>
-        <span class="metric-value">{{ weatherData.main.temp }}°C</span>
-      </div>
-      <div class="metric-container">
-        <mat-icon class="metric-icon" color="primary">opacity</mat-icon>
-        <span class="metric-value">{{ weatherData.main.humidity }}%</span>
-      </div>
-    </div>
+    <section class="big-weather-metrics">
+      <h2 class="visually-hidden">Métriques météorologiques</h2>
+      <figure class="metric-container">
+        <mat-icon class="metric-icon" color="primary" aria-hidden="true">thermostat</mat-icon>
+        <figcaption class="metric-value">
+          {{ weatherData.main.temp }}°C
+        </figcaption>
+      </figure>
+      <figure class="metric-container">
+        <mat-icon class="metric-icon" color="primary" aria-hidden="true">opacity</mat-icon>
+        <figcaption class="metric-value">
+          {{ weatherData.main.humidity }}%
+        </figcaption>
+      </figure>
+    </section>
   }
 
-  <div class="spacer"></div>
+  <div class="spacer" aria-hidden="true"></div>
+
 } @else {
-  <div class="form-container">
-    <mat-checkbox (change)="cameraFollowChanged($event)" [checked]="true" color="primary">Activer le suivi de la caméra
+  <section class="form-container">
+    <h2 class="visually-hidden">Contrôles de la caméra</h2>
+    <mat-checkbox
+      (change)="cameraFollowChanged($event)"
+      [checked]="true"
+      color="primary"
+      aria-label="Activer le suivi automatique de la caméra">
+      Activer le suivi de la caméra
     </mat-checkbox>
-    <mat-slider class="slider" min="0" max="0">
-      <input matSliderThumb>
+    <mat-slider class="slider" min="0" max="0" aria-label="Chronologie vide">
+      <input matSliderThumb aria-disabled="true">
     </mat-slider>
-  </div>
-  <div class="weather-container">
-    <img class="weather-icon" [src]="'/assets/animated/'+ getDayOrNight(getNow())+'.svg'"
-         alt="Weather icon">
-    <div class="date-container">
-      <h2 class="day-name">{{
+  </section>
+
+  <section class="weather-container">
+    <h2 class="visually-hidden">Conditions météorologiques actuelles</h2>
+    <img
+      class="weather-icon"
+      [src]="'/assets/animated/'+ getDayOrNight(getNow())+'.svg'"
+      [alt]="getDayOrNight(getNow()) === 'day' ? 'Jour' : 'Nuit'">
+
+    <article class="date-container">
+      <time
+        class="day-name"
+        [attr.datetime]="getNow().toISOString()">
+        {{
           getNow().toLocaleDateString('fr-FR', {
             weekday: 'long',
             day: '2-digit',
@@ -74,24 +131,38 @@
             minute: '2-digit',
             second: '2-digit'
           })
-        }}</h2>
-      <div class="ico-container">
-        <mat-icon color="primary">satellite_alt</mat-icon>
-        <span>&nbsp;lat: --
-          long: --</span>
-      </div>
-    </div>
-  </div>
-  <div class="spacer"></div>
-  <div class="big-weather-metrics">
-    <div class="metric-container">
-      <mat-icon class="metric-icon" color="primary">thermostat</mat-icon>
-      <span class="metric-value">--°C</span>
-    </div>
-    <div class="metric-container">
-      <mat-icon class="metric-icon" color="primary">opacity</mat-icon>
-      <span class="metric-value">--%</span>
-    </div>
-  </div>
-  <div class="spacer"></div>
+        }}
+      </time>
+
+      <figure class="ico-container">
+        <mat-icon color="primary" aria-hidden="true">satellite_alt</mat-icon>
+        <figcaption>
+          <span>
+            &nbsp;lat: --
+            long: --
+          </span>
+        </figcaption>
+      </figure>
+    </article>
+  </section>
+
+  <div class="spacer" aria-hidden="true"></div>
+
+  <section class="big-weather-metrics">
+    <h2 class="visually-hidden">Métriques météorologiques non disponibles</h2>
+    <figure class="metric-container">
+      <mat-icon class="metric-icon" color="primary" aria-hidden="true">thermostat</mat-icon>
+      <figcaption class="metric-value">
+        --°C
+      </figcaption>
+    </figure>
+    <figure class="metric-container">
+      <mat-icon class="metric-icon" color="primary" aria-hidden="true">opacity</mat-icon>
+      <figcaption class="metric-value">
+        --%
+      </figcaption>
+    </figure>
+  </section>
+
+  <div class="spacer" aria-hidden="true"></div>
 }

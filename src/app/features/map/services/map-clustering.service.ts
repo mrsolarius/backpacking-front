@@ -222,23 +222,34 @@ export class MapClusteringService implements IMapClusteringService {
     allPhotos: PictureCoordinateDTO[]
   ): boolean {
     // Calculer un seuil de distance approprié en fonction du niveau de zoom
-    // Plus le zoom est élevé, plus le seuil est petit
     const distanceThreshold = Math.max(0.01, 0.1 / Math.pow(1.5, Math.max(0, zoom - 7)));
+    const distanceThresholdSquared = distanceThreshold * distanceThreshold; // Évite de calculer la racine carrée
 
-    // Vérifier la distance avec les autres photos
+    // Structure de quadrillage pour accélérer la recherche spatiale
+    // Diviser l'espace en cellules et ne vérifier que les photos proches
+    const cellSize = distanceThreshold * 2;
+    const cellX = Math.floor(photo.longitude / cellSize);
+    const cellY = Math.floor(photo.latitude / cellSize);
+
+    // Ne vérifier que les photos dans les cellules adjacentes
     for (const otherPhoto of allPhotos) {
       // Ne pas comparer avec soi-même
       if (otherPhoto.id === photo.id) continue;
 
-      // Calculer la distance approximative
-      const distance = Math.sqrt(
-        Math.pow(photo.longitude - otherPhoto.longitude, 2) +
-        Math.pow(photo.latitude - otherPhoto.latitude, 2)
-      );
+      const otherCellX = Math.floor(otherPhoto.longitude / cellSize);
+      const otherCellY = Math.floor(otherPhoto.latitude / cellSize);
 
-      // Si une photo est trop proche, celle-ci n'est pas isolée
-      if (distance < distanceThreshold) {
-        return false;
+      // Vérifier seulement si la photo est dans une cellule adjacente
+      if (Math.abs(cellX - otherCellX) <= 1 && Math.abs(cellY - otherCellY) <= 1) {
+        // Calculer le carré de la distance (plus rapide que sqrt)
+        const distanceSquared =
+          Math.pow(photo.longitude - otherPhoto.longitude, 2) +
+          Math.pow(photo.latitude - otherPhoto.latitude, 2);
+
+        // Si une photo est trop proche, celle-ci n'est pas isolée
+        if (distanceSquared < distanceThresholdSquared) {
+          return false;
+        }
       }
     }
 

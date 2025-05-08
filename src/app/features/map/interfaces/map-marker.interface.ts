@@ -5,7 +5,6 @@ export interface IMapMarkerService {
   createMarker(options: MarkerOptions): Marker;
   createPhotoMarker(photo: PictureCoordinateDTO, map: MapboxMap, onClick: (photo: PictureCoordinateDTO) => void): Marker;
   createMeMarker(coordinates: LngLat, map: MapboxMap): Marker;
-  animateMarkerMovement(marker: Marker, target: LngLat, duration: number): void;
   highlightMarker(markerId: number, markers: Record<string, { marker: Marker, element: HTMLDivElement }>): void;
   resetMarkerSizes(markers: Record<string, { marker: Marker, element: HTMLDivElement }>): void;
   createMarkerPopup(picture: PictureCoordinateDTO, marker: Marker, map: MapboxMap): void;

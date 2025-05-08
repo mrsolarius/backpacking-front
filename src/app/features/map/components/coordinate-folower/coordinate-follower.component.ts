@@ -4,17 +4,30 @@ import {MapDataService} from "../../../../core/services/map-data.service";
 import {AsyncPipe, isPlatformBrowser} from "@angular/common";
 import {CoordinateDto} from "../../../../core/models/dto/coordinate.dto";
 import {FormsModule} from "@angular/forms";
-import {first} from "rxjs";
+import {catchError, EMPTY, first, Observable, of, tap} from "rxjs";
 import {HttpClient} from "@angular/common/http";
 import {MatIcon} from "@angular/material/icon";
 import {MatCheckbox, MatCheckboxChange} from "@angular/material/checkbox";
-
 
 export enum CameraFollow {
   ON = 'ON',
   OFF = 'OFF'
 }
 
+interface WeatherResponse {
+  data: any[];
+  lat: number;
+  lon: number;
+  timezone: string;
+  timezone_offset: number;
+}
+
+interface WeatherCache {
+  [key: string]: {
+    data: any;
+    timestamp: number;
+  };
+}
 
 @Component({
   selector: 'app-coordinate-folower',
@@ -22,8 +35,6 @@ export enum CameraFollow {
   imports: [
     MatSlider,
     MatSliderThumb,
-    AsyncPipe,
-    FormsModule,
     FormsModule,
     MatCheckbox,
     MatIcon,
@@ -32,7 +43,7 @@ export enum CameraFollow {
   styleUrl: './coordinate-follower.component.scss'
 })
 export class CoordinateFollowerComponent implements OnInit {
-  weatherIconMap:any = {
+  weatherIconMap: any = {
     '200': 'thunder.svg', // Thunderstorm with light rain
     '201': 'thunder.svg', // Thunderstorm with rain
     '202': 'thunder.svg', // Thunderstorm with heavy rain
@@ -100,10 +111,14 @@ export class CoordinateFollowerComponent implements OnInit {
   sliderChange = new EventEmitter<CoordinateDto>();
   @Output()
   cameraFollowChange = new EventEmitter<CameraFollow>();
+
   coordinates: CoordinateDto[] = [];
   selectedCoordinate: number = 0;
   weatherData: any;
   isBrowser: boolean;
+  private weatherCache: WeatherCache = {};
+  private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 heures en millisecondes
+  private readonly API_KEY = '102011f938be0f23a8dd32e9073a96ca';
 
   constructor(
     @Inject(PLATFORM_ID) platformId: any,
@@ -126,19 +141,21 @@ export class CoordinateFollowerComponent implements OnInit {
   }
 
   loadCoordinates() {
-    this.mapDataService.getCoordinatesByTravelId(this.travelId).pipe(first()).subscribe((coordinates) => {
-      this.coordinates = coordinates;
-      if (this.coordinates.length > 0) {
-        this.selectedCoordinate = this.coordinates.length - 1;
-        this.onSliderChange(this.selectedCoordinate);
-      }
-    });
+    this.mapDataService.getCoordinatesByTravelId(this.travelId)
+      .pipe(first())
+      .subscribe((coordinates) => {
+        this.coordinates = coordinates;
+        if (this.coordinates.length > 0) {
+          this.selectedCoordinate = this.coordinates.length - 1;
+          this.onSliderChange(this.selectedCoordinate);
+        }
+      });
   }
 
-  formatLabel(p1: number) {
-    if (!this.coordinates || !this.coordinates[p1]) return '';
+  formatLabel(index: number): string {
+    if (!this.coordinates || !this.coordinates[index]) return '';
 
-    return this.coordinates[p1].date.toLocaleDateString('fr-FR', {
+    return this.coordinates[index].date.toLocaleDateString('fr-FR', {
       day: '2-digit',
       month: 'short',
       hour: '2-digit',
@@ -150,30 +167,126 @@ export class CoordinateFollowerComponent implements OnInit {
   onSliderChange(selectedCoordinate: number) {
     if (!this.coordinates || this.coordinates.length === 0) return;
 
-    this.sliderChange.emit(this.coordinates[selectedCoordinate]);
-    this.getWeatherData(this.coordinates[selectedCoordinate].latitude, this.coordinates[selectedCoordinate].longitude)
-      .pipe(first())
+    const coordinate = this.coordinates[selectedCoordinate];
+    this.sliderChange.emit(coordinate);
+
+    this.getHistoricalWeatherData(
+      coordinate.latitude,
+      coordinate.longitude,
+      coordinate.date
+    )
+      .pipe(
+        first(),
+        catchError(error => {
+          console.error('Erreur lors de la récupération des données météo:', error);
+          // En cas d'erreur, essayer l'API météo actuelle comme fallback
+          return this.getCurrentWeatherData(coordinate.latitude, coordinate.longitude).pipe(
+            first(),
+            catchError(currentError => {
+              console.error('Erreur lors de la récupération des données météo actuelles:', currentError);
+              this.weatherData = null;
+              return EMPTY;
+            })
+          );
+        })
+      )
       .subscribe(data => {
-        this.weatherData = data;
+        if (data) {
+          // Pour l'API historique, adapter les données au format attendu
+          if (data.data && data.data.length > 0) {
+            const historicalData = data.data[0];
+            this.weatherData = {
+              weather: [{
+                id: historicalData.weather[0].id,
+                description: historicalData.weather[0].description
+              }],
+              main: {
+                temp: historicalData.temp,
+                humidity: historicalData.humidity
+              },
+              name: data.timezone.split('/').pop().replace('_', ' ') // Extraction du nom de la ville à partir du fuseau horaire
+            };
+          } else {
+            // Pour l'API courante, les données sont déjà au bon format
+            this.weatherData = data;
+          }
+        }
       });
   }
 
-  getWeatherData(lat: number, lon: number) {
-    const apiKey = 'cd24834c2501f9da7da53bf7a96cb381';
-    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
-    return this.http.get(url);
+  /**
+   * Récupère les données météo historiques pour une date spécifique
+   */
+  getHistoricalWeatherData(lat: number, lon: number, date: Date): Observable<WeatherResponse> {
+    // Arrondir les coordonnées pour améliorer l'efficacité du cache
+    const roundedLat = Math.round(lat * 1000) / 1000;
+    const roundedLon = Math.round(lon * 1000) / 1000;
+
+    // Convertir la date en timestamp Unix (secondes depuis le 1er janvier 1970)
+    const timestamp = Math.floor(date.getTime() / 1000);
+
+    const cacheKey = `${roundedLat},${roundedLon},${timestamp}`;
+    const now = Date.now();
+
+    // Vérifier si nous avons des données en cache valides
+    if (this.weatherCache[cacheKey] &&
+      (now - this.weatherCache[cacheKey].timestamp) < this.CACHE_DURATION) {
+      return of(this.weatherCache[cacheKey].data);
+    }
+
+    // Construire l'URL pour l'API OpenWeatherMap historique
+    const url = `https://api.openweathermap.org/data/3.0/onecall/timemachine?lat=${lat}&lon=${lon}&dt=${timestamp}&appid=${this.API_KEY}&units=metric`;
+
+    return this.http.get<WeatherResponse>(url).pipe(
+      tap(data => {
+        // Stocker les résultats dans le cache
+        this.weatherCache[cacheKey] = {
+          data,
+          timestamp: now
+        };
+      })
+    );
   }
 
-  getDayOrNight(date: Date) {
+  /**
+   * Récupère les données météo actuelles (utilisé comme fallback)
+   */
+  getCurrentWeatherData(lat: number, lon: number): Observable<any> {
+    // Arrondir les coordonnées pour améliorer l'efficacité du cache
+    const roundedLat = Math.round(lat * 1000) / 1000;
+    const roundedLon = Math.round(lon * 1000) / 1000;
+    const cacheKey = `current_${roundedLat},${roundedLon}`;
+    const now = Date.now();
+
+    // Vérifier si nous avons des données en cache valides (30 minutes pour les données actuelles)
+    if (this.weatherCache[cacheKey] &&
+      (now - this.weatherCache[cacheKey].timestamp) < 30 * 60 * 1000) {
+      return of(this.weatherCache[cacheKey].data);
+    }
+
+    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${this.API_KEY}&units=metric`;
+
+    return this.http.get(url).pipe(
+      tap(data => {
+        // Stocker les résultats dans le cache
+        this.weatherCache[cacheKey] = {
+          data,
+          timestamp: now
+        };
+      })
+    );
+  }
+
+  getDayOrNight(date: Date): string {
     const hours = date.getHours();
     return hours > 6 && hours < 20 ? 'day' : 'night';
   }
 
   cameraFollowChanged($event: MatCheckboxChange) {
-    this.cameraFollowChange.emit($event.checked? CameraFollow.ON : CameraFollow.OFF);
+    this.cameraFollowChange.emit($event.checked ? CameraFollow.ON : CameraFollow.OFF);
   }
 
-  getNow() {
-    return new Date()
+  getNow(): Date {
+    return new Date();
   }
 }
