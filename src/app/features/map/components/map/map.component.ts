@@ -1,4 +1,3 @@
-// src/app/features/map/map.component.ts - version refactorisée avec SOLID
 import {
   Component,
   ElementRef,
