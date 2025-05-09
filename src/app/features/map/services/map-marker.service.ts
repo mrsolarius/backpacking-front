@@ -5,6 +5,8 @@ import { environment } from '../../../../environments/environment';
 import { PictureCoordinateDTO } from "../../../core/models/dto/images.dto";
 import { IMapMarkerPoolService } from '../interfaces/map-marker-pool.interface';
 import { MARKER_POOL_SERVICE } from '../tokens/map.token';
+import {MarkerElement} from "../models/marker-element.model";
+
 
 @Injectable({
   providedIn: 'root'
@@ -16,6 +18,31 @@ export class MapMarkerService implements IMapMarkerService {
   constructor(
     @Optional() @Inject(MARKER_POOL_SERVICE) private markerPoolService?: IMapMarkerPoolService
   ) {}
+
+  /**
+   * Utilitaire pour ajouter un écouteur avec suivi
+   */
+  private addTrackedEventListener(
+    element: MarkerElement,
+    type: string,
+    listener: EventListenerOrEventListenerObject,
+    options?: boolean | AddEventListenerOptions
+  ): void {
+    // Initialiser le tableau de suivi si nécessaire
+    if (!element._eventListeners) {
+      element._eventListeners = [];
+    }
+
+    // Ajouter l'écouteur au DOM
+    element.addEventListener(type, listener, options);
+
+    // Enregistrer l'écouteur pour pouvoir le supprimer plus tard
+    element._eventListeners.push({
+      type,
+      listener,
+      options
+    });
+  }
 
   /**
    * Crée un marqueur Mapbox générique
@@ -44,7 +71,7 @@ export class MapMarkerService implements IMapMarkerService {
       throw new Error('Le service de pool de marqueurs n\'est pas disponible');
     }
 
-    const el = this.markerPoolService.getMarkerFromPool();
+    const el = this.markerPoolService.getMarkerFromPool() as MarkerElement;
 
     // Ajouter un attribut data-id pour l'identification
     el.setAttribute('data-photo-id', photo.id.toString());
@@ -95,14 +122,14 @@ export class MapMarkerService implements IMapMarkerService {
     // Gestion des événements avec technique de debounce
     let popupTimeout: any;
 
-    // Événement de clic
-    el.addEventListener('click', (event) => {
+    // Événement de clic - UTILISER LA MÉTHODE DE SUIVI
+    this.addTrackedEventListener(el, 'click', (event) => {
       event.stopPropagation();
       onClick(photo);
     });
 
-    // Événement de survol avec délai pour éviter création excessive de popups
-    el.addEventListener('mouseenter', () => {
+    // Événement de survol avec délai - UTILISER LA MÉTHODE DE SUIVI
+    this.addTrackedEventListener(el, 'mouseenter', () => {
       if (this.isZooming) return; // Ne pas créer de popup pendant le zoom
 
       clearTimeout(popupTimeout);
@@ -114,8 +141,8 @@ export class MapMarkerService implements IMapMarkerService {
       }, 150);
     });
 
-    // Événement de sortie pour nettoyer le timeout
-    el.addEventListener('mouseleave', () => {
+    // Événement de sortie - UTILISER LA MÉTHODE DE SUIVI
+    this.addTrackedEventListener(el, 'mouseleave', () => {
       clearTimeout(popupTimeout);
     });
 
@@ -243,8 +270,8 @@ export class MapMarkerService implements IMapMarkerService {
     popup.addTo(map);
     this.popups.push(popup);
 
-    // Fermer le popup quand la souris quitte le marqueur
-    markerElement.addEventListener('mouseleave', () => {
+    // Fermer le popup quand la souris quitte le marqueur - UTILISER LA MÉTHODE DE SUIVI
+    this.addTrackedEventListener(markerElement as MarkerElement, 'mouseleave', () => {
       popup.remove();
       this.popups = this.popups.filter(p => p !== popup);
     });
@@ -285,7 +312,7 @@ export class MapMarkerService implements IMapMarkerService {
 
       // Ne retourner au pool que les marqueurs photo (pas le marqueur "me")
       if (element.classList.contains('photo-marker')) {
-        this.markerPoolService!.returnMarkerToPool(element);
+        this.markerPoolService!.returnMarkerToPool(element as MarkerElement);
       }
     });
   }
@@ -321,13 +348,13 @@ export class MapMarkerService implements IMapMarkerService {
 
           // Ne retourner au pool que les marqueurs photo
           if (element.classList.contains('photo-marker')) {
-            this.markerPoolService!.returnMarkerToPool(element);
+            this.markerPoolService!.returnMarkerToPool(element as MarkerElement);
           }
 
           delete visibleMarkers[id];
         });
       } else {
-        // Pour de grands lots, traiter par tranches
+        // Pour de grands lots, traiter par batch
         const processInBatches = (startIdx: number) => {
           const endIdx = Math.min(startIdx + 10, idsToRemove.length);
 
@@ -339,7 +366,7 @@ export class MapMarkerService implements IMapMarkerService {
 
               // Ne retourner au pool que les marqueurs photo
               if (element.classList.contains('photo-marker')) {
-                this.markerPoolService!.returnMarkerToPool(element);
+                this.markerPoolService!.returnMarkerToPool(element as MarkerElement);
               }
 
               delete visibleMarkers[id];

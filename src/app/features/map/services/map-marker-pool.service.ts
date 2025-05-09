@@ -1,12 +1,14 @@
 import { Injectable } from '@angular/core';
 import { IMapMarkerPoolService } from '../interfaces/map-marker-pool.interface';
+import {MarkerElement} from "../models/marker-element.model";
+
 
 @Injectable({
   providedIn: 'root'
 })
 export class MapMarkerPoolService implements IMapMarkerPoolService {
   // Pool de marqueurs réutilisables pour les photos
-  private markerPool: HTMLDivElement[] = [];
+  private markerPool: MarkerElement[] = [];
   private readonly PHOTO_POOL_SIZE = 100; // Taille maximale du pool de photos
 
   constructor() {
@@ -19,9 +21,10 @@ export class MapMarkerPoolService implements IMapMarkerPoolService {
   initMarkerPool(): void {
     // Pré-création des éléments de marqueurs photo pour le pool
     for (let i = 0; i < this.PHOTO_POOL_SIZE; i++) {
-      const el = document.createElement('div');
+      const el = document.createElement('div') as MarkerElement;
       el.className = 'photo-marker';
       el.style.display = 'none';
+      el._eventListeners = []; // Initialiser le tableau pour suivre les écouteurs
       document.body.appendChild(el);
       this.markerPool.push(el);
     }
@@ -30,7 +33,7 @@ export class MapMarkerPoolService implements IMapMarkerPoolService {
   /**
    * Récupère un marqueur photo du pool ou en crée un nouveau
    */
-  getMarkerFromPool(): HTMLDivElement {
+  getMarkerFromPool(): MarkerElement {
     // Chercher un marqueur disponible dans le pool
     const poolElement = this.markerPool.find(el => el.style.display === 'none');
 
@@ -45,31 +48,36 @@ export class MapMarkerPoolService implements IMapMarkerPoolService {
       poolElement.style.border = '2px solid white';
       poolElement.style.boxShadow = '0 0 5px rgba(0, 0, 0, 0.2)';
 
-      // Supprimer tous les écouteurs d'événements existants
-      const newElement = poolElement.cloneNode() as HTMLDivElement;
-      if (poolElement.parentNode) {
-        poolElement.parentNode.replaceChild(newElement, poolElement);
-        this.markerPool[this.markerPool.indexOf(poolElement)] = newElement;
-        return newElement;
-      }
+      // Réinitialiser le tableau des écouteurs
+      poolElement._eventListeners = [];
+
       return poolElement;
     }
 
     // Créer un nouvel élément si le pool est épuisé
     console.log('Pool de marqueurs épuisé, création d\'un nouveau marqueur');
-    const el = document.createElement('div');
+    const el = document.createElement('div') as MarkerElement;
     el.className = 'photo-marker';
+    el._eventListeners = [];
     return el;
   }
 
   /**
    * Retourne un marqueur au pool
    */
-  returnMarkerToPool(element: HTMLDivElement): void {
+  returnMarkerToPool(element: MarkerElement): void {
     if (!element) return;
 
     // Ne gérer que les marqueurs photo
     if (!element.classList.contains('photo-marker')) return;
+
+    // Supprimer tous les écouteurs d'événements
+    if (element._eventListeners && element._eventListeners.length > 0) {
+      element._eventListeners.forEach(entry => {
+        element.removeEventListener(entry.type, entry.listener, entry.options);
+      });
+      element._eventListeners = [];
+    }
 
     // Réinitialiser l'élément
     element.style.backgroundImage = '';
@@ -77,15 +85,9 @@ export class MapMarkerPoolService implements IMapMarkerPoolService {
     element.style.width = '30px';
     element.style.height = '30px';
 
-    // Supprimer les écouteurs d'événements
-    const newElement = element.cloneNode() as HTMLDivElement;
-    if (element.parentNode) {
-      element.parentNode.replaceChild(newElement, element);
-
-      // Ajouter au pool si pas déjà présent
-      if (!this.markerPool.includes(newElement) && this.markerPool.length < this.PHOTO_POOL_SIZE) {
-        this.markerPool.push(newElement);
-      }
+    // Ajouter au pool si pas déjà présent
+    if (!this.markerPool.includes(element) && this.markerPool.length < this.PHOTO_POOL_SIZE) {
+      this.markerPool.push(element);
     }
   }
 }
