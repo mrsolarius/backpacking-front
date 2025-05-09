@@ -1,4 +1,3 @@
-
 export interface IMapMarkerPoolService {
   /**
    * Initialise les pools de marqueurs
@@ -9,11 +8,6 @@ export interface IMapMarkerPoolService {
    * Récupère un marqueur photo du pool ou en crée un nouveau
    */
   getMarkerFromPool(): HTMLDivElement;
-
-  /**
-   * Récupère un marqueur personnel du pool ou en crée un nouveau
-   */
-  getMeMarkerFromPool(): HTMLDivElement;
 
   /**
    * Retourne un marqueur au pool

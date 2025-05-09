@@ -13,133 +13,9 @@ export class MapMarkerService implements IMapMarkerService {
   private popups: Popup[] = [];           // Suivi des popups actifs
   private isZooming = false;              // Indicateur de zoom actif
 
-  // Pool de marqueurs réutilisables (si le service n'est pas injecté)
-  private markerPool: HTMLDivElement[] = [];
-  private meMarkerPool: HTMLDivElement[] = [];
-  private readonly PHOTO_POOL_SIZE = 100; // Taille maximale du pool de photos
-  private readonly ME_POOL_SIZE = 5;      // Taille maximale du pool de marqueurs personnels
-
   constructor(
     @Optional() @Inject(MARKER_POOL_SERVICE) private markerPoolService?: IMapMarkerPoolService
-  ) {
-    // Si le service de pool n'a pas été injecté, initialiser les pools localement
-    if (!this.markerPoolService) {
-      this.initLocalMarkerPool();
-    }
-  }
-
-  /**
-   * Initialise les pools de marqueurs localement si le service de pool n'est pas disponible
-   */
-  private initLocalMarkerPool(): void {
-    // Pré-création des éléments de marqueurs photo pour le pool
-    for (let i = 0; i < this.PHOTO_POOL_SIZE; i++) {
-      const el = document.createElement('div');
-      el.className = 'photo-marker';
-      el.style.display = 'none';
-      document.body.appendChild(el);
-      this.markerPool.push(el);
-    }
-
-    // Pré-création des éléments de marqueurs personnels
-    for (let i = 0; i < this.ME_POOL_SIZE; i++) {
-      const el = document.createElement('div');
-      el.className = 'me-marker';
-      el.style.display = 'none';
-      document.body.appendChild(el);
-      this.meMarkerPool.push(el);
-    }
-  }
-
-  /**
-   * Récupère un marqueur photo du pool ou en crée un nouveau
-   */
-  private getMarkerFromLocalPool(): HTMLDivElement {
-    // Chercher un marqueur disponible dans le pool
-    const poolElement = this.markerPool.find(el => el.style.display === 'none');
-
-    if (poolElement) {
-      // Réinitialiser les propriétés du marqueur pour sa réutilisation
-      poolElement.style.display = 'block';
-      poolElement.style.backgroundImage = '';
-      poolElement.style.width = '30px';
-      poolElement.style.height = '30px';
-      poolElement.style.borderRadius = '50%';
-      poolElement.style.zIndex = '';
-      poolElement.style.border = '2px solid white';
-      poolElement.style.boxShadow = '0 0 5px rgba(0, 0, 0, 0.2)';
-
-      // Supprimer tous les écouteurs d'événements existants
-      const newElement = poolElement.cloneNode() as HTMLDivElement;
-      if (poolElement.parentNode) {
-        poolElement.parentNode.replaceChild(newElement, poolElement);
-        this.markerPool[this.markerPool.indexOf(poolElement)] = newElement;
-        return newElement;
-      }
-      return poolElement;
-    }
-
-    // Créer un nouvel élément si le pool est épuisé
-    console.log('Pool de marqueurs épuisé, création d\'un nouveau marqueur');
-    const el = document.createElement('div');
-    el.className = 'photo-marker';
-    return el;
-  }
-
-  /**
-   * Récupère un marqueur personnel du pool ou en crée un nouveau
-   */
-  private getMeMarkerFromLocalPool(): HTMLDivElement {
-    const poolElement = this.meMarkerPool.find(el => el.style.display === 'none');
-
-    if (poolElement) {
-      poolElement.style.display = 'block';
-
-      // Réinitialiser pour réutilisation
-      const newElement = poolElement.cloneNode() as HTMLDivElement;
-      if (poolElement.parentNode) {
-        poolElement.parentNode.replaceChild(newElement, poolElement);
-        this.meMarkerPool[this.meMarkerPool.indexOf(poolElement)] = newElement;
-        return newElement;
-      }
-      return poolElement;
-    }
-
-    // Créer un nouvel élément si nécessaire
-    const el = document.createElement('div');
-    el.className = 'me-marker';
-    return el;
-  }
-
-  /**
-   * Retourne un marqueur au pool local
-   */
-  private returnMarkerToLocalPool(element: HTMLDivElement): void {
-    if (!element) return;
-
-    // Réinitialiser l'élément
-    element.style.backgroundImage = '';
-    element.style.display = 'none';
-    element.style.width = '30px';
-    element.style.height = '30px';
-
-    // Supprimer les écouteurs d'événements
-    const newElement = element.cloneNode() as HTMLDivElement;
-    if (element.parentNode) {
-      element.parentNode.replaceChild(newElement, element);
-
-      // Ajouter au pool si pas déjà présent
-      if (element.classList.contains('photo-marker')) {
-        if (!this.markerPool.includes(newElement) && this.markerPool.length < this.PHOTO_POOL_SIZE) {
-          this.markerPool.push(newElement);
-        }
-      } else if (element.classList.contains('me-marker')) {
-        if (!this.meMarkerPool.includes(newElement) && this.meMarkerPool.length < this.ME_POOL_SIZE) {
-          this.meMarkerPool.push(newElement);
-        }
-      }
-    }
-  }
+  ) {}
 
   /**
    * Crée un marqueur Mapbox générique
@@ -164,9 +40,11 @@ export class MapMarkerService implements IMapMarkerService {
     }
 
     // Obtenir un élément du pool de marqueurs
-    const el = this.markerPoolService
-      ? this.markerPoolService.getMarkerFromPool()
-      : this.getMarkerFromLocalPool();
+    if (!this.markerPoolService) {
+      throw new Error('Le service de pool de marqueurs n\'est pas disponible');
+    }
+
+    const el = this.markerPoolService.getMarkerFromPool();
 
     // Ajouter un attribut data-id pour l'identification
     el.setAttribute('data-photo-id', photo.id.toString());
@@ -260,12 +138,12 @@ export class MapMarkerService implements IMapMarkerService {
   }
 
   /**
-   * Crée un marqueur personnalisé pour la position actuelle avec le pool
+   * Crée un marqueur personnalisé pour la position actuelle
    */
   createMeMarker(coordinates: LngLat, map: MapboxMap): Marker {
-    const el = this.markerPoolService
-      ? this.markerPoolService.getMeMarkerFromPool()
-      : this.getMeMarkerFromLocalPool();
+    // Simplement créer un nouvel élément directement pour le marqueur "me"
+    const el = document.createElement('div');
+    el.className = 'me-marker';
 
     // Ajouter le marqueur sur la carte
     const marker = this.createMarker({
@@ -395,13 +273,19 @@ export class MapMarkerService implements IMapMarkerService {
    * Supprime tous les marqueurs de la carte et les retourne au pool
    */
   removeMarkers(markers: Record<string, { marker: Marker, element: HTMLDivElement }>): void {
+    if (!this.markerPoolService) {
+      Object.values(markers).forEach(({marker}) => {
+        marker.remove();
+      });
+      return;
+    }
+
     Object.values(markers).forEach(({marker, element}) => {
       marker.remove();
 
-      if (this.markerPoolService) {
-        this.markerPoolService.returnMarkerToPool(element);
-      } else {
-        this.returnMarkerToLocalPool(element);
+      // Ne retourner au pool que les marqueurs photo (pas le marqueur "me")
+      if (element.classList.contains('photo-marker')) {
+        this.markerPoolService!.returnMarkerToPool(element);
       }
     });
   }
@@ -413,6 +297,10 @@ export class MapMarkerService implements IMapMarkerService {
     visibleMarkers: Record<string, { marker: Marker, element: HTMLDivElement }>,
     visibleIds: Set<number>
   ): void {
+    if (!this.markerPoolService) {
+      return;
+    }
+
     // Identifier les marqueurs à supprimer (hors de la vue)
     const idsToRemove: number[] = [];
 
@@ -431,10 +319,9 @@ export class MapMarkerService implements IMapMarkerService {
           const {marker, element} = visibleMarkers[id];
           marker.remove();
 
-          if (this.markerPoolService) {
-            this.markerPoolService.returnMarkerToPool(element);
-          } else {
-            this.returnMarkerToLocalPool(element);
+          // Ne retourner au pool que les marqueurs photo
+          if (element.classList.contains('photo-marker')) {
+            this.markerPoolService!.returnMarkerToPool(element);
           }
 
           delete visibleMarkers[id];
@@ -450,10 +337,9 @@ export class MapMarkerService implements IMapMarkerService {
               const {marker, element} = visibleMarkers[id];
               marker.remove();
 
-              if (this.markerPoolService) {
-                this.markerPoolService.returnMarkerToPool(element);
-              } else {
-                this.returnMarkerToLocalPool(element);
+              // Ne retourner au pool que les marqueurs photo
+              if (element.classList.contains('photo-marker')) {
+                this.markerPoolService!.returnMarkerToPool(element);
               }
 
               delete visibleMarkers[id];

@@ -5,18 +5,16 @@ import { IMapMarkerPoolService } from '../interfaces/map-marker-pool.interface';
   providedIn: 'root'
 })
 export class MapMarkerPoolService implements IMapMarkerPoolService {
-  // Pool de marqueurs réutilisables
+  // Pool de marqueurs réutilisables pour les photos
   private markerPool: HTMLDivElement[] = [];
-  private meMarkerPool: HTMLDivElement[] = [];
   private readonly PHOTO_POOL_SIZE = 100; // Taille maximale du pool de photos
-  private readonly ME_POOL_SIZE = 5;      // Taille maximale du pool de marqueurs personnels
 
   constructor() {
     this.initMarkerPool();
   }
 
   /**
-   * Initialise les pools de marqueurs
+   * Initialise le pool de marqueurs photos
    */
   initMarkerPool(): void {
     // Pré-création des éléments de marqueurs photo pour le pool
@@ -26,15 +24,6 @@ export class MapMarkerPoolService implements IMapMarkerPoolService {
       el.style.display = 'none';
       document.body.appendChild(el);
       this.markerPool.push(el);
-    }
-
-    // Pré-création des éléments de marqueurs personnels
-    for (let i = 0; i < this.ME_POOL_SIZE; i++) {
-      const el = document.createElement('div');
-      el.className = 'me-marker';
-      el.style.display = 'none';
-      document.body.appendChild(el);
-      this.meMarkerPool.push(el);
     }
   }
 
@@ -74,35 +63,13 @@ export class MapMarkerPoolService implements IMapMarkerPoolService {
   }
 
   /**
-   * Récupère un marqueur personnel du pool ou en crée un nouveau
-   */
-  getMeMarkerFromPool(): HTMLDivElement {
-    const poolElement = this.meMarkerPool.find(el => el.style.display === 'none');
-
-    if (poolElement) {
-      poolElement.style.display = 'block';
-
-      // Réinitialiser pour réutilisation
-      const newElement = poolElement.cloneNode() as HTMLDivElement;
-      if (poolElement.parentNode) {
-        poolElement.parentNode.replaceChild(newElement, poolElement);
-        this.meMarkerPool[this.meMarkerPool.indexOf(poolElement)] = newElement;
-        return newElement;
-      }
-      return poolElement;
-    }
-
-    // Créer un nouvel élément si nécessaire
-    const el = document.createElement('div');
-    el.className = 'me-marker';
-    return el;
-  }
-
-  /**
    * Retourne un marqueur au pool
    */
   returnMarkerToPool(element: HTMLDivElement): void {
     if (!element) return;
+
+    // Ne gérer que les marqueurs photo
+    if (!element.classList.contains('photo-marker')) return;
 
     // Réinitialiser l'élément
     element.style.backgroundImage = '';
@@ -116,14 +83,8 @@ export class MapMarkerPoolService implements IMapMarkerPoolService {
       element.parentNode.replaceChild(newElement, element);
 
       // Ajouter au pool si pas déjà présent
-      if (element.classList.contains('photo-marker')) {
-        if (!this.markerPool.includes(newElement) && this.markerPool.length < this.PHOTO_POOL_SIZE) {
-          this.markerPool.push(newElement);
-        }
-      } else if (element.classList.contains('me-marker')) {
-        if (!this.meMarkerPool.includes(newElement) && this.meMarkerPool.length < this.ME_POOL_SIZE) {
-          this.meMarkerPool.push(newElement);
-        }
+      if (!this.markerPool.includes(newElement) && this.markerPool.length < this.PHOTO_POOL_SIZE) {
+        this.markerPool.push(newElement);
       }
     }
   }
