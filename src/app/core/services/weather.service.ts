@@ -18,7 +18,7 @@ interface WeatherCache {
   providedIn: 'root'
 })
 export class WeatherService implements IWeatherService {
-  private readonly API_KEY = environment.weatherApiKey || '102011f938be0f23a8dd32e9073a96ca';
+  private readonly API_KEY = environment.weatherApiKey;
   private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 heures en millisecondes
   private readonly CURRENT_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes en millisecondes
   private weatherCache: WeatherCache = {};

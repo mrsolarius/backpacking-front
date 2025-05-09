@@ -17,7 +17,7 @@ interface GeocodingCache {
   providedIn: 'root'
 })
 export class GeocodingService implements IGeocodingService {
-  private readonly API_KEY = environment.weatherApiKey || '102011f938be0f23a8dd32e9073a96ca';
+  private readonly API_KEY = environment.weatherApiKey;
   private readonly CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 jours en millisecondes (les données géographiques changent rarement)
   private geocodingCache: GeocodingCache = {};
 
@@ -44,7 +44,7 @@ export class GeocodingService implements IGeocodingService {
     }
 
     // Construire l'URL pour l'API OpenWeatherMap de géocodage inverse
-    const url = `http://api.openweathermap.org/geo/1.0/reverse?lat=${params.lat}&lon=${params.lon}&limit=${limit}&appid=${this.API_KEY}`;
+    const url = `https://api.openweathermap.org/geo/1.0/reverse?lat=${params.lat}&lon=${params.lon}&limit=${limit}&appid=${this.API_KEY}`;
 
     return this.http.get<ReverseGeocodingResponse[]>(url).pipe(
       tap(data => {
