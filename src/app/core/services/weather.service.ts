@@ -1,29 +1,37 @@
 // src/app/core/services/weather.service.ts
-import { Injectable } from '@angular/core';
+import {Inject, Injectable} from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
+import { switchMap, catchError } from 'rxjs/operators';
 import { IWeatherService } from '../interfaces/weather-service.interface';
 import { CurrentWeatherDTO, HistoricalWeatherResponse } from '../models/dto/weather.dto';
 import { environment } from '../../../environments/environment';
-
-interface WeatherCache {
-  [key: string]: {
-    data: any;
-    timestamp: number;
-  };
-}
+import {CacheConfig} from "../models/cache.model";
+import {CacheService} from "./cache.service";
+import {CACHE_SERVICE} from "../tokens/cache.token";
+import {ICacheService} from "../interfaces/cache-service.interface";
 
 @Injectable({
   providedIn: 'root'
 })
 export class WeatherService implements IWeatherService {
   private readonly API_KEY = environment.weatherApiKey;
-  private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 heures en millisecondes
-  private readonly CURRENT_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes en millisecondes
-  private weatherCache: WeatherCache = {};
+  private readonly CACHE_CONFIG: CacheConfig = {
+    ttl: Infinity, // Les données météo historiques ne changent pas donc pas de TTL
+    storeName: 'weather_cache'
+  };
+  private readonly CURRENT_CACHE_CONFIG: CacheConfig = {
+    ttl: 30 * 60 * 1000, // 30 minutes en millisecondes
+    storeName: 'weather_cache'
+  };
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    @Inject(CACHE_SERVICE) private cacheService: ICacheService
+  ) {
+    // Nettoyer les entrées expirées au démarrage du service
+    this.cacheService.cleanExpiredEntries(this.CACHE_CONFIG.storeName).subscribe();
+  }
 
   /**
    * Récupère les données météo historiques pour une date spécifique
@@ -37,28 +45,23 @@ export class WeatherService implements IWeatherService {
     const timestamp = Math.floor(date.getTime() / 1000);
 
     const cacheKey = `historical_${roundedLat},${roundedLon},${timestamp}`;
-    const now = Date.now();
 
-    // Vérifier si nous avons des données en cache valides
-    if (this.weatherCache[cacheKey] &&
-      (now - this.weatherCache[cacheKey].timestamp) < this.CACHE_DURATION) {
-      return of(this.weatherCache[cacheKey].data);
-    }
+    return this.cacheService.get<HistoricalWeatherResponse>(cacheKey, this.CACHE_CONFIG).pipe(
+      switchMap(cachedData => {
+        if (cachedData) {
+          return of(cachedData);
+        }
 
-    // Construire l'URL pour l'API OpenWeatherMap historique
-    const url = `https://api.openweathermap.org/data/3.0/onecall/timemachine?lat=${lat}&lon=${lon}&dt=${timestamp}&appid=${this.API_KEY}&units=metric`;
+        // Construire l'URL pour l'API OpenWeatherMap historique
+        const url = `https://api.openweathermap.org/data/3.0/onecall/timemachine?lat=${lat}&lon=${lon}&dt=${timestamp}&appid=${this.API_KEY}&units=metric`;
 
-    return this.http.get<HistoricalWeatherResponse>(url).pipe(
-      tap(data => {
-        // Stocker les résultats dans le cache
-        this.weatherCache[cacheKey] = {
-          data,
-          timestamp: now
-        };
-      }),
-      catchError(error => {
-        console.error('Erreur lors de la récupération des données météo historiques:', error);
-        throw error;
+        return this.http.get<HistoricalWeatherResponse>(url).pipe(
+          switchMap(data => this.cacheService.set(cacheKey, data, this.CACHE_CONFIG)),
+          catchError(error => {
+            console.error('Erreur lors de la récupération des données météo historiques:', error);
+            throw error;
+          })
+        );
       })
     );
   }
@@ -71,28 +74,46 @@ export class WeatherService implements IWeatherService {
     const roundedLat = Math.round(lat * 1000) / 1000;
     const roundedLon = Math.round(lon * 1000) / 1000;
     const cacheKey = `current_${roundedLat},${roundedLon}`;
-    const now = Date.now();
 
-    // Vérifier si nous avons des données en cache valides
-    if (this.weatherCache[cacheKey] &&
-      (now - this.weatherCache[cacheKey].timestamp) < this.CURRENT_CACHE_DURATION) {
-      return of(this.weatherCache[cacheKey].data);
-    }
+    return this.cacheService.get<CurrentWeatherDTO>(cacheKey, this.CURRENT_CACHE_CONFIG).pipe(
+      switchMap(cachedData => {
+        if (cachedData) {
+          return of(cachedData);
+        }
 
-    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${this.API_KEY}&units=metric`;
+        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${this.API_KEY}&units=metric`;
 
-    return this.http.get<CurrentWeatherDTO>(url).pipe(
-      tap(data => {
-        // Stocker les résultats dans le cache
-        this.weatherCache[cacheKey] = {
-          data,
-          timestamp: now
-        };
-      }),
-      catchError(error => {
-        console.error('Erreur lors de la récupération des données météo actuelles:', error);
-        throw error;
+        return this.http.get<CurrentWeatherDTO>(url).pipe(
+          switchMap(data => this.cacheService.set(cacheKey, data, this.CURRENT_CACHE_CONFIG)),
+          catchError(error => {
+            console.error('Erreur lors de la récupération des données météo actuelles:', error);
+            throw error;
+          })
+        );
       })
     );
+  }
+
+  /**
+   * Invalide le cache pour une région spécifique
+   * @param lat Latitude
+   * @param lon Longitude
+   */
+  invalidateRegionCache(lat: number, lon: number): void {
+    const roundedLat = Math.round(lat * 1000) / 1000;
+    const roundedLon = Math.round(lon * 1000) / 1000;
+
+    // Supprimer l'entrée de la météo actuelle
+    const currentCacheKey = `current_${roundedLat},${roundedLon}`;
+    this.cacheService.remove(currentCacheKey, this.CACHE_CONFIG.storeName).subscribe();
+
+    // Note: Les entrées historiques spécifiques ne sont pas invalidées car elles ne changent pas
+  }
+
+  /**
+   * Invalide tout le cache météo
+   */
+  invalidateAllCache(): void {
+    this.cacheService.clearStore(this.CACHE_CONFIG.storeName).subscribe();
   }
 }
