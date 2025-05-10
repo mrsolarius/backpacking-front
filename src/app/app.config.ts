@@ -4,7 +4,7 @@ import {provideRouter} from '@angular/router';
 import {routes} from './app.routes';
 import {provideClientHydration} from '@angular/platform-browser';
 import {provideAnimationsAsync} from '@angular/platform-browser/animations/async';
-import {provideHttpClient, withFetch} from "@angular/common/http";
+import { provideHttpClient, withFetch } from "@angular/common/http";
 import {provideServiceWorker} from '@angular/service-worker';
 import {WEATHER_PROVIDERS} from "./core/providers/weather.providers";
 import {GEOCODING_PROVIDERS} from "./core/providers/geocoding.providers";
