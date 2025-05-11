@@ -1,0 +1,68 @@
+.ngg-controls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+}
+
+.ngg-control {
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  position: absolute;
+}
+
+.ngg-control:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.ngg-control:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Positionnement des flèches au milieu de la hauteur */
+.ngg-control-prev {
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.ngg-control-next {
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Positionnement du bouton zoom et fermer en haut à droite */
+.ngg-control-zoom {
+  top: 15px;
+  right: 65px; /* Espace pour le bouton fermer */
+}
+
+.ngg-control-close {
+  top: 15px;
+  right: 15px;
+}
+
+/* Positionnement du compteur en haut à gauche */
+.ngg-counter {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 14px;
+}

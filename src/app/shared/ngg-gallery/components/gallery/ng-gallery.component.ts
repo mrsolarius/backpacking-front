@@ -87,7 +87,7 @@ export class NgGalleryComponent implements OnInit, AfterViewInit {
     }
   }
 
-  onImageClick(): void {
+  zoomAction(): void {
     if (this.galleryService.config().enableZoom) {
       this.galleryService.toggleZoom();
     }
