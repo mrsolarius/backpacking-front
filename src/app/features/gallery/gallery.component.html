@@ -1,13 +1,8 @@
-<!-- gallery.component.html amélioré -->
 @if(isBrowser) {
-  <div class="gallery-container" [photoGalleryGroup]="{
-    arrowEl: true,
-    indexIndicatorSep: ' / ',
-    index: selectedIndex
-  }">
+  <div class="gallery-container">
     @if ((picturesObs | async); as pictures) {
       @if(pictures.length > 0) {
-        <div class="images-grid">
+        <div ngGalleryGroup="photoCollection" class="images-grid">
           @for (picture of pictures; track picture.id; let i = $index) {
             @if (shouldShowDate(pictures, i)) {
               <div class="date-separator">
@@ -18,36 +13,12 @@
             <div class="image-wrapper" [attr.id]="picture.id" [ngClass]="getImageOrientation(picture)">
               <a
                 class="image-link"
-                [photoGallery]="getImageUrl(picture, 'fullsize')"
                 (mouseover)="imageHover(picture)"
                 [ngClass]="{'selected': selectedPhoto?.id === picture.id}"
               >
-                <picture appImageLoader>
-                  <!-- Desktop sizes -->
-                  <source
-                    [srcset]="getSrcSet(picture, 'desktop')"
-                    media="(min-width: 1025px)"
-                    type="image/webp">
-
-                  <!-- Tablet sizes -->
-                  <source
-                    [srcset]="getSrcSet(picture, 'tablet')"
-                    media="(min-width: 641px) and (max-width: 1024px)"
-                    type="image/webp">
-
-                  <!-- Mobile sizes -->
-                  <source
-                    [srcset]="getSrcSet(picture, 'mobile')"
-                    media="(max-width: 640px)"
-                    type="image/webp">
-
-                  <!-- Fallback image -->
-                  <img
-                    [src]="getImageUrl(picture)"
-                    [alt]="'Photo ' + picture.id"
-                    loading="lazy"
-                    class="gallery-image">
-                </picture>
+                <ngg-responsive-img
+                  [ngGalleryItem]="picture | pictureDTOMapper"
+                ></ngg-responsive-img>
 
                 @if (selectedPhoto?.id === picture.id) {
                   <div class="selected-indicator">

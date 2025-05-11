@@ -12,6 +12,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import {CameraFollow} from "../../map/models/camera-follow.enum";
+import {NgGalleryModule} from "../../../shared/ngg-gallery/ngg-gallery.module";
 
 @Component({
   selector: 'app-travel-detail',
@@ -23,7 +24,8 @@ import {CameraFollow} from "../../map/models/camera-follow.enum";
     CoordinateFollowerComponent,
     MatTabsModule,
     MatIconModule,
-    MatButtonModule
+    MatButtonModule,
+    NgGalleryModule
   ],
   templateUrl: './travel-detail.component.html',
   styleUrls: ['./travel-detail.component.scss']

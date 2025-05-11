@@ -8,9 +8,14 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { Inject, PLATFORM_ID } from '@angular/core';
-import {ImageLoaderDirective} from "../../../shared/directives/image-loader.directive";
+import {ImageLoaderDirective} from "../../../shared/ngg-gallery/directives/image-loader.directive";
 import {PictureCoordinateDTO} from "../../../core/models/dto/images.dto";
 import {environment} from "../../../../environments/environment";
+import {
+  NgGalleryResponsiveImgComponent
+} from "../../../shared/ngg-gallery/components/responsive-img/ng-gallery-responsive-img.component";
+import {mapPictureCoordinateToNgGalleryImage} from "../../../core/mappers/images.mapper";
+import {PictureDtoMapperPipe} from "../../../shared/directives/picture-dto-mapper.pipe";
 
 @Component({
   selector: 'app-travel-list',
@@ -22,7 +27,9 @@ import {environment} from "../../../../environments/environment";
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    ImageLoaderDirective
+    ImageLoaderDirective,
+    NgGalleryResponsiveImgComponent,
+    PictureDtoMapperPipe
   ],
   templateUrl: './travel-list.component.html',
   styleUrls: ['./travel-list.component.scss']
@@ -75,4 +82,6 @@ export class TravelListComponent implements OnInit {
     const tabletVersion = picture.versions.tablet?.[0];
     return tabletVersion ? `${environment.baseApi}${tabletVersion.path}` : '';
   }
+
+  protected readonly mapPictureCoordinateToNgGalleryImage = mapPictureCoordinateToNgGalleryImage;
 }

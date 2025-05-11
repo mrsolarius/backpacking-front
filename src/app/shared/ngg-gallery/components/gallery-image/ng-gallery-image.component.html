@@ -1,0 +1,19 @@
+<div
+  class="ngg-image-container"
+  [class.ngg-zoomed]="zoomed"
+  (click)="onImageClick()">
+  <picture>
+    @for (source of image.sources || []; track source) {
+      <source
+        [attr.media]="getMediaQuery(source)"
+        [attr.type]="source.type"
+        [attr.srcset]="getSrcset(source.srcset)">
+    }
+    <img
+      [src]="zoomed && image.originalSrc ? image.originalSrc : image.defaultSrc"
+      [alt]="image.alt"
+      class="ngg-image"
+      [class.ngg-image-zoom]="zoomed"
+      loading="lazy">
+  </picture>
+</div>

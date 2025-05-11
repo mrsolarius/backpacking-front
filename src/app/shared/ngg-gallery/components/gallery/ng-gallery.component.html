@@ -1,0 +1,42 @@
+@if (galleryService.isOpen()) {
+  <div
+    class="ngg-gallery-backdrop"
+    (click)="onBackdropClick($event)"
+    [class.ngg-gallery-animated]="galleryService.config().animations">
+    <div
+      class="ngg-gallery-content"
+      [class.ngg-zoomed]="galleryService.zoomed()"
+      [class.ngg-gallery-animated]="galleryService.config().animations"
+      (touchstart)="onTouchStart($event)"
+      (touchend)="onTouchEnd($event)">
+
+      @if (galleryService.currentImage()) {
+        <ngg-gallery-image
+          [image]="galleryService.currentImage()!"
+          [zoomed]="galleryService.zoomed()"
+          (imageClick)="onImageClick()">
+        </ngg-gallery-image>
+      }
+
+      @if (galleryService.config().showControls) {
+        <ngg-gallery-controls
+          [currentIndex]="galleryService.currentIndex()"
+          [totalImages]="galleryService.images().length"
+          [showCounter]="galleryService.config().showCounter"
+          (prevClick)="onPrevClick()"
+          (nextClick)="onNextClick()"
+          (closeClick)="onCloseClick()">
+        </ngg-gallery-controls>
+      }
+
+      @if (galleryService.currentImage().caption && galleryService.config().captionPosition !== 'none') {
+        <div
+          class="ngg-caption"
+          [class.ngg-caption-top]="galleryService.config().captionPosition === 'top'"
+          [class.ngg-caption-bottom]="galleryService.config().captionPosition === 'bottom'">
+          {{ galleryService.currentImage().caption }}
+        </div>
+      }
+    </div>
+  </div>
+}

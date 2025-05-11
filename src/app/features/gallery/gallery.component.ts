@@ -4,10 +4,16 @@ import { AsyncPipe, CommonModule, isPlatformBrowser } from "@angular/common";
 import { PictureCoordinateDTO } from "../../core/models/dto/images.dto";
 import { GalleryService } from "../../core/services/gallery.service";
 import { BehaviorSubject, Observable, distinctUntilChanged, map, switchMap } from "rxjs";
-import { PhotoGalleryModule } from "@twogate/ngx-photo-gallery";
 import { MatIcon } from "@angular/material/icon";
 import { environment } from "../../../environments/environment";
-import { ImageLoaderDirective } from "../../shared/directives/image-loader.directive";
+import { ImageLoaderDirective } from "../../shared/ngg-gallery/directives/image-loader.directive";
+import {
+  NgGalleryResponsiveImgComponent
+} from "../../shared/ngg-gallery/components/responsive-img/ng-gallery-responsive-img.component";
+import { mapPictureCoordinateToNgGalleryImage } from '../../core/mappers/images.mapper';
+import {PictureDtoMapperPipe} from "../../shared/directives/picture-dto-mapper.pipe";
+import {NgGalleryModule} from "../../shared/ngg-gallery/ngg-gallery.module";
+import {NgGalleryGroupDirective} from "../../shared/ngg-gallery/directives/ng-gallery-group.directive";
 
 @Component({
   selector: 'app-gallery',
@@ -15,9 +21,10 @@ import { ImageLoaderDirective } from "../../shared/directives/image-loader.direc
   imports: [
     AsyncPipe,
     CommonModule,
-    PhotoGalleryModule,
     MatIcon,
-    ImageLoaderDirective
+    NgGalleryResponsiveImgComponent,
+    PictureDtoMapperPipe,
+    NgGalleryModule,
   ],
   templateUrl: './gallery.component.html',
   styleUrl: './gallery.component.scss'
