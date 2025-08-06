@@ -1,19 +1,19 @@
-@if (isBrowser) {
-  <div class="travel-header">
-    <button mat-icon-button color="primary" (click)="goBack()" class="back-button">
-      <mat-icon>arrow_back</mat-icon>
-    </button>
-    @if (travel) {
-      <h1 class="travel-title">{{ travel.name }}</h1>
-      <p class="travel-dates">
-        {{ travel.startDate | date:'dd MMM yyyy' }}
-        <span *ngIf="travel.endDate"> - {{ travel.endDate | date:'dd MMM yyyy' }}</span>
-      </p>
-    }
-  </div>
+<div class="travel-header">
+  <button mat-icon-button color="primary" (click)="goBack()" class="back-button">
+    <mat-icon>arrow_back</mat-icon>
+  </button>
+  @if (travel) {
+    <h1 class="travel-title">{{ travel.name }}</h1>
+    <p class="travel-dates">
+      {{ travel.startDate | date:'dd MMM yyyy' }}
+      <span *ngIf="travel.endDate"> - {{ travel.endDate | date:'dd MMM yyyy' }}</span>
+    </p>
+  }
+</div>
 
-  <main class="page-struct">
-    <section class="map">
+<main class="page-struct">
+  <section class="map">
+    @if (isBrowser) {
       <app-map
         [travelId]="travelId"
         (photosClick)="photoSelected($event)"
@@ -21,55 +21,53 @@
         [selectedCoordinate]="selectedCoordinate"
         [cameraFollow]="cameraFollow">
       </app-map>
-    </section>
-    <section class="right-panel mat-body">
-      <mat-tab-group class="tab-expand">
-        <mat-tab label="Photos">
-          <app-gallery
-            [travelId]="travelId"
-            [selectedPhoto]="selectedPhoto"
-            (photoHover)="photoHover($event)">
-          </app-gallery>
-        </mat-tab>
-        <mat-tab label="Suivi">
-          <app-coordinate-follower
-            [travelId]="travelId"
-            (sliderChange)="coordinateSelected($event)"
-            (cameraFollowChange)="cameraFollowChange($event)">
-          </app-coordinate-follower>
-        </mat-tab>
-        <mat-tab label="Infos">
-          @if (travel) {
-            <div class="travel-info">
-              <h2>Description</h2>
-              <p class="travel-description">{{ travel.description }}</p>
+    }
+  </section>
+  <section class="right-panel mat-body">
+    <mat-tab-group class="tab-expand">
+      <mat-tab label="Photos">
+        <app-gallery
+          [travelId]="travelId"
+          [selectedPhoto]="selectedPhoto"
+          (photoHover)="photoHover($event)">
+        </app-gallery>
+      </mat-tab>
+      <mat-tab label="Suivi">
+        <app-coordinate-follower
+          [travelId]="travelId"
+          (sliderChange)="coordinateSelected($event)"
+          (cameraFollowChange)="cameraFollowChange($event)">
+        </app-coordinate-follower>
+      </mat-tab>
+      <mat-tab label="Infos">
+        @if (travel) {
+          <div class="travel-info">
+            <h2>Description</h2>
+            <p class="travel-description">{{ travel.description }}</p>
 
-              <div class="stats-container">
-                <div class="stat-item">
-                  <mat-icon>calendar_today</mat-icon>
-                  <span>Durée: {{ travel.endDate ?
-                    ((travel.endDate.getTime() - travel.startDate.getTime()) / (1000 * 60 * 60 * 24) | number: '1.0-0')+ ' jours' :
-                    'En cours' }}</span>
-                </div>
+            <div class="stats-container">
+              <div class="stat-item">
+                <mat-icon>calendar_today</mat-icon>
+                <span>Durée: {{
+                    travel.endDate ?
+                      ((travel.endDate.getTime() - travel.startDate.getTime()) / (1000 * 60 * 60 * 24) | number: '1.0-0') + ' jours' :
+                      'En cours'
+                  }}</span>
+              </div>
 
-                <div class="stat-item">
-                  <mat-icon>photo_camera</mat-icon>
-                  <span>Photos: {{ travel.pictures?.length || 0 }}</span>
-                </div>
+              <div class="stat-item">
+                <mat-icon>photo_camera</mat-icon>
+                <span>Photos: {{ travel.pictures?.length || 0 }}</span>
+              </div>
 
-                <div class="stat-item">
-                  <mat-icon>timeline</mat-icon>
-                  <span>Points de suivi: {{ travel.coordinates?.length || 0 }}</span>
-                </div>
+              <div class="stat-item">
+                <mat-icon>timeline</mat-icon>
+                <span>Points de suivi: {{ travel.coordinates?.length || 0 }}</span>
               </div>
             </div>
-          }
-        </mat-tab>
-      </mat-tab-group>
-    </section>
-  </main>
-} @else {
-  <div class="loading-container">
-    <p>Chargement du voyage...</p>
-  </div>
-}
+          </div>
+        }
+      </mat-tab>
+    </mat-tab-group>
+  </section>
+</main>

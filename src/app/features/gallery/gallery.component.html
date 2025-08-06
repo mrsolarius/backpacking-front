@@ -1,40 +1,38 @@
-@if(isBrowser) {
-  <div class="gallery-container">
-    @if ((picturesObs | async); as pictures) {
-      @if(pictures.length > 0) {
-        <div ngGalleryGroup="photoCollection" class="images-grid">
-          @for (picture of pictures; track picture.id; let i = $index) {
-            @if (shouldShowDate(pictures, i)) {
-              <div class="date-separator">
-                {{ formatDate(picture.date) }}
-              </div>
-            }
-
-            <div class="image-wrapper" [attr.id]="picture.id" [ngClass]="getImageOrientation(picture)">
-              <a
-                class="image-link"
-                (mouseover)="imageHover(picture)"
-                [ngClass]="{'selected': selectedPhoto?.id === picture.id}"
-              >
-                <ngg-responsive-img
-                  [ngGalleryItem]="picture | pictureDTOMapper"
-                ></ngg-responsive-img>
-
-                @if (selectedPhoto?.id === picture.id) {
-                  <div class="selected-indicator">
-                    <mat-icon>check_circle</mat-icon>
-                  </div>
-                }
-              </a>
+<div class="gallery-container">
+  @if ((picturesObs | async); as pictures) {
+    @if (pictures.length > 0) {
+      <div ngGalleryGroup="photoCollection" class="images-grid">
+        @for (picture of pictures; track picture.id; let i = $index) {
+          @if (shouldShowDate(pictures, i)) {
+            <div class="date-separator">
+              {{ formatDate(picture.date) }}
             </div>
           }
-        </div>
-      } @else {
-        <div class="no-images">
-          <mat-icon class="no-images-icon" color="primary">landscape</mat-icon>
-          <div class="no-images-text">Aucune photo pour ce voyage</div>
-        </div>
-      }
+
+          <div class="image-wrapper" [attr.id]="picture.id" [ngClass]="getImageOrientation(picture)">
+            <a
+              class="image-link"
+              (mouseover)="imageHover(picture)"
+              [ngClass]="{'selected': selectedPhoto?.id === picture.id}"
+            >
+              <ngg-responsive-img
+                [ngGalleryItem]="picture | pictureDTOMapper"
+              ></ngg-responsive-img>
+
+              @if (selectedPhoto?.id === picture.id) {
+                <div class="selected-indicator">
+                  <mat-icon>check_circle</mat-icon>
+                </div>
+              }
+            </a>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="no-images">
+        <mat-icon class="no-images-icon" color="primary">landscape</mat-icon>
+        <div class="no-images-text">Aucune photo pour ce voyage</div>
+      </div>
     }
-  </div>
-}
+  }
+</div>

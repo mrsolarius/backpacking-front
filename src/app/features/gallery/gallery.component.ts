@@ -1,6 +1,6 @@
 // gallery.component.ts amélioré
 import { Component, EventEmitter, Inject, Input, OnInit, Output, PLATFORM_ID } from '@angular/core';
-import { AsyncPipe, CommonModule, isPlatformBrowser } from "@angular/common";
+import {AsyncPipe, CommonModule, DOCUMENT, isPlatformBrowser} from "@angular/common";
 import { PictureCoordinateDTO } from "../../core/models/dto/images.dto";
 import { GalleryService } from "../../core/services/gallery.service";
 import { BehaviorSubject, Observable, distinctUntilChanged, map, switchMap } from "rxjs";
@@ -59,7 +59,8 @@ export class GalleryComponent implements OnInit {
 
   constructor(
     @Inject(PLATFORM_ID) platformId: Object,
-    private galleryService: GalleryService
+    @Inject(DOCUMENT) private document: Document,
+    private galleryService: GalleryService,
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
 
@@ -95,7 +96,7 @@ export class GalleryComponent implements OnInit {
   private scrollToSelectedImage(id: number): void {
     if (this.isBrowser) {
       setTimeout(() => {
-        const element = document.getElementById(id.toString());
+        const element = this.document.getElementById(id.toString());
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
