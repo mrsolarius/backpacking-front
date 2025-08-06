@@ -1,0 +1,119 @@
+.zoomable-image-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  user-select: none;
+
+  &.zoomed {
+    overflow: hidden; // Empêche les barres de défilement pendant le zoom
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 1;
+      pointer-events: none;
+    }
+  }
+
+  picture {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.zoomable-image {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  will-change: transform; // Optimisation pour les animations
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); // Animation fluide
+  transform-origin: center;
+  cursor: zoom-in;
+  z-index: 2;
+
+  &.zoomed {
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+}
+
+.image-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 12px 16px;
+  text-align: center;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  z-index: 3;
+  pointer-events: none;
+
+  &.visible {
+    transform: translateY(0);
+  }
+}
+
+// Animation d'entrée pour le zoom
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(1);
+  }
+  to {
+    opacity: 1;
+    transform: scale(2);
+  }
+}
+
+// Animation de sortie pour le zoom
+@keyframes zoomOut {
+  from {
+    opacity: 1;
+    transform: scale(2);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+// Media queries pour les appareils mobiles
+@media (max-width: 768px) {
+  .zoomable-image {
+    max-height: 70vh;
+  }
+
+  .image-caption {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+}
+
+// Support pour les lecteurs d'écran
+@media (prefers-reduced-motion: reduce) {
+  .zoomable-image {
+    transition: none;
+  }
+
+  .image-caption {
+    transition: none;
+  }
+}

@@ -7,7 +7,7 @@ import { NgGalleryConfig, NgGalleryImage } from '../../models/gallery.model';
   templateUrl:'ng-gallery.component.html',
   styleUrls: ['ng-gallery.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  encapsulation: ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None,
 })
 export class NgGalleryComponent implements OnInit, AfterViewInit {
   @Input() images: NgGalleryImage[] = [];
@@ -61,14 +61,25 @@ export class NgGalleryComponent implements OnInit, AfterViewInit {
       case 'Escape':
         this.onCloseClick();
         break;
+      case ' ': // Espace pour zoomer/dézoomer
+      case 'z':
+      case 'Z':
+        this.zoomAction();
+        break;
     }
   }
 
   onTouchStart(event: TouchEvent): void {
+    // Ne gérons pas le swipe si nous sommes en mode zoom
+    if (this.galleryService.zoomed()) return;
+
     this.touchStartX = event.touches[0].clientX;
   }
 
   onTouchEnd(event: TouchEvent): void {
+    // Ne gérons pas le swipe si nous sommes en mode zoom
+    if (this.galleryService.zoomed()) return;
+
     this.touchEndX = event.changedTouches[0].clientX;
     this.handleSwipe();
   }
@@ -93,20 +104,45 @@ export class NgGalleryComponent implements OnInit, AfterViewInit {
     }
   }
 
+  onZoomChange(zoomed: boolean): void {
+    // Synchroniser l'état de zoom avec le service
+    if (this.galleryService.zoomed() !== zoomed) {
+      this.galleryService.updateZoomState(zoomed);
+    }
+  }
+
   onPrevClick(): void {
+    // Ne pas changer d'image en mode zoom
+    if (this.galleryService.zoomed()) return;
+
     this.galleryService.prev();
   }
 
   onNextClick(): void {
+    // Ne pas changer d'image en mode zoom
+    if (this.galleryService.zoomed()) return;
+
     this.galleryService.next();
   }
 
   onCloseClick(): void {
+    // Si en mode zoom, d'abord quitter le zoom
+    if (this.galleryService.zoomed()) {
+      this.galleryService.updateZoomState(false);
+      return;
+    }
+
     this.galleryService.close();
   }
 
   onBackdropClick(event: MouseEvent): void {
     if (this.galleryService.config().closeOnOutsideClick && event.target === event.currentTarget) {
+      // Si en mode zoom, d'abord quitter le zoom
+      if (this.galleryService.zoomed()) {
+        this.galleryService.updateZoomState(false);
+        return;
+      }
+
       this.galleryService.close();
     }
   }

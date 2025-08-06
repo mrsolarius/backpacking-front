@@ -10,6 +10,7 @@ import { GalleryService } from './services/gallery.service';
 import {NgGalleryGroupDirective} from "./directives/ng-gallery-group.directive";
 import {NgGalleryItemDirective} from "./directives/ng-gallery-item.directive";
 import {GalleryInjectorService} from "./services/gallery-injector.service";
+import {ZoomableImageComponent} from "./components/zoomable-image/zoomable-image.component";
 
 @NgModule({
   declarations: [
@@ -17,6 +18,7 @@ import {GalleryInjectorService} from "./services/gallery-injector.service";
     NgGalleryImageComponent,
     NgGalleryControlsComponent,
     NgGalleryGroupDirective,
+    ZoomableImageComponent,
     NgGalleryItemDirective
   ],
   imports: [

@@ -24,14 +24,15 @@
       (touchend)="onTouchEnd($event)">
 
       @if (galleryService.currentImage()) {
-        <ngg-gallery-image
+        <ngg-zoomable-image
           [image]="galleryService.currentImage()!"
-          [zoomed]="galleryService.zoomed()"
+          [zoom]="galleryService.zoomed()"
+          (zoomChange)="onZoomChange($event)"
           (imageClick)="zoomAction()">
-        </ngg-gallery-image>
+        </ngg-zoomable-image>
       }
 
-      @if (galleryService.currentImage().caption && galleryService.config().captionPosition !== 'none') {
+      @if (galleryService.currentImage().caption && galleryService.config().captionPosition !== 'none' && !galleryService.zoomed()) {
         <div
           class="ngg-caption"
           [class.ngg-caption-top]="galleryService.config().captionPosition === 'top'"

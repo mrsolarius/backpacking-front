@@ -1,0 +1,25 @@
+<div #imageContainer class="zoomable-image-container" [class.zoomed]="isZoomed()">
+  <picture>
+    @for (source of image.sources || []; track source.srcset[0].src) {
+      <source
+        [attr.media]="getMediaQuery(source)"
+        [attr.type]="source.type"
+        [attr.srcset]="getSrcset(source.srcset)">
+    }
+    <img
+      #zoomableImg
+      class="zoomable-image"
+      [class.zoomed]="isZoomed()"
+      [src]="isZoomed() && image.originalSrc ? image.originalSrc : image.defaultSrc"
+      [alt]="image.alt"
+      [ngStyle]="imageStyle()"
+      (click)="onImageClick($event)"
+      loading="lazy">
+  </picture>
+
+  @if (image.caption && isZoomed()) {
+    <div class="image-caption" [class.visible]="isZoomed()">
+      {{ image.caption }}
+    </div>
+  }
+</div>

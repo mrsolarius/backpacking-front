@@ -144,4 +144,11 @@ export class GalleryService {
     const img = new Image();
     img.src = src;
   }
+
+  updateZoomState(zoomed: boolean): void {
+    this.state.update(state => ({
+      ...state,
+      zoomed
+    }));
+  }
 }
