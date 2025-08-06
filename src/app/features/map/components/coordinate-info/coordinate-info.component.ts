@@ -15,7 +15,6 @@ export class CoordinateInfoComponent {
   @Input() coordinate?: CoordinateDto;
   @Input() locationName?: string;
 
-  getNow(): Date {
-    return new Date();
-  }
+
+  now = new Date();
 }

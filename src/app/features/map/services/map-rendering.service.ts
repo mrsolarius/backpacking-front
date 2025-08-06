@@ -220,16 +220,17 @@ export class MapRenderingService implements IMapProvider {
    * Ajoute un terrain 3D à la carte
    */
   addTerrain(): void {
-    if (!this.map || this.lowPerformanceMode) return;
+    if (!this.map || this.lowPerformanceMode || this.map.getSource('mapbox-dem')!==undefined) return;
 
-    this.map.addSource('mapbox-dem', {
+
+    this.map.addSource('mapbox-terrain', {
       'type': 'raster-dem',
       'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
       'tileSize': 512,
       'maxzoom': 14
     });
 
-    this.map.setTerrain({'source': 'mapbox-dem', 'exaggeration': 1.5});
+    this.map.setTerrain({'source': 'mapbox-terrain', 'exaggeration': 1.5});
   }
 
   /**

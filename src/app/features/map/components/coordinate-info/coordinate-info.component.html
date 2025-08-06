@@ -1,9 +1,9 @@
 <article class="date-container">
   <time
     class="day-name"
-    [attr.datetime]="coordinate ? coordinate.date.toISOString() : getNow().toISOString()">
+    [attr.datetime]="coordinate ? coordinate.date.toISOString() : now.toISOString()">
     {{
-      (coordinate ? coordinate.date : getNow()).toLocaleDateString('fr-FR', {
+      (coordinate ? coordinate.date : now).toLocaleDateString('fr-FR', {
         weekday: 'long',
         day: '2-digit',
         month: 'long',
