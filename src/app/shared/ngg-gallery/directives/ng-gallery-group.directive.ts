@@ -4,8 +4,9 @@ import { NgGalleryImage, NgGalleryConfig } from '../models/gallery.model';
 import {GalleryInjectorService} from "../services/gallery-injector.service";
 
 @Directive({
-  selector: '[ngGalleryGroup]',
-  exportAs: 'ngGalleryGroup'
+    selector: '[ngGalleryGroup]',
+    exportAs: 'ngGalleryGroup',
+    standalone: false
 })
 export class NgGalleryGroupDirective implements OnInit{
   @Input('ngGalleryGroup') groupId: string = 'default';

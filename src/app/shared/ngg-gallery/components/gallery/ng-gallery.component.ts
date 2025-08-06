@@ -3,11 +3,12 @@ import { GalleryService } from '../../services/gallery.service';
 import { NgGalleryConfig, NgGalleryImage } from '../../models/gallery.model';
 
 @Component({
-  selector: 'ngg-gallery',
-  templateUrl:'ng-gallery.component.html',
-  styleUrls: ['ng-gallery.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  encapsulation: ViewEncapsulation.None,
+    selector: 'ngg-gallery',
+    templateUrl: 'ng-gallery.component.html',
+    styleUrls: ['ng-gallery.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    encapsulation: ViewEncapsulation.None,
+    standalone: false
 })
 export class NgGalleryComponent implements OnInit, AfterViewInit {
   @Input() images: NgGalleryImage[] = [];

@@ -18,21 +18,19 @@ import {mapPictureCoordinateToNgGalleryImage} from "../../../core/mappers/images
 import {PictureDtoMapperPipe} from "../../../shared/directives/picture-dto-mapper.pipe";
 
 @Component({
-  selector: 'app-travel-list',
-  standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    AsyncPipe,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    ImageLoaderDirective,
-    NgGalleryResponsiveImgComponent,
-    PictureDtoMapperPipe
-  ],
-  templateUrl: './travel-list.component.html',
-  styleUrls: ['./travel-list.component.scss']
+    selector: 'app-travel-list',
+    imports: [
+        CommonModule,
+        RouterModule,
+        AsyncPipe,
+        MatCardModule,
+        MatButtonModule,
+        MatIconModule,
+        NgGalleryResponsiveImgComponent,
+        PictureDtoMapperPipe
+    ],
+    templateUrl: './travel-list.component.html',
+    styleUrls: ['./travel-list.component.scss']
 })
 export class TravelListComponent implements OnInit {
   travels$!: Observable<TravelDTO[]>;

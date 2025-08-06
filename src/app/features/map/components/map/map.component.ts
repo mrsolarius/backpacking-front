@@ -28,15 +28,14 @@ import {MAP_PROVIDERS} from "../../providers/map.providers";
 import {CameraFollow} from "../../models/camera-follow.enum";
 
 @Component({
-  selector: 'app-map',
-  standalone: true,
-  imports: [
-    MatProgressSpinner
-  ],
-  templateUrl: './map.component.html',
-  styleUrl: './map.component.scss',
-  encapsulation: ViewEncapsulation.None,
-  providers: MAP_PROVIDERS
+    selector: 'app-map',
+    imports: [
+        MatProgressSpinner
+    ],
+    templateUrl: './map.component.html',
+    styleUrl: './map.component.scss',
+    encapsulation: ViewEncapsulation.None,
+    providers: MAP_PROVIDERS
 })
 export class MapComponent implements OnInit, OnDestroy {
   private readonly isServer: boolean;

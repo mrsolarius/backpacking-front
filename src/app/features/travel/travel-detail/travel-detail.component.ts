@@ -15,20 +15,19 @@ import {CameraFollow} from "../../map/models/camera-follow.enum";
 import {NgGalleryModule} from "../../../shared/ngg-gallery/ngg-gallery.module";
 
 @Component({
-  selector: 'app-travel-detail',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MapComponent,
-    GalleryComponent,
-    CoordinateFollowerComponent,
-    MatTabsModule,
-    MatIconModule,
-    MatButtonModule,
-    NgGalleryModule
-  ],
-  templateUrl: './travel-detail.component.html',
-  styleUrls: ['./travel-detail.component.scss']
+    selector: 'app-travel-detail',
+    imports: [
+        CommonModule,
+        MapComponent,
+        GalleryComponent,
+        CoordinateFollowerComponent,
+        MatTabsModule,
+        MatIconModule,
+        MatButtonModule,
+        NgGalleryModule
+    ],
+    templateUrl: './travel-detail.component.html',
+    styleUrls: ['./travel-detail.component.scss']
 })
 export class TravelDetailComponent implements OnInit {
   travelId: number;

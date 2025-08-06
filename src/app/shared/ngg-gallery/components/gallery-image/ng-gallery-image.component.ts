@@ -2,10 +2,11 @@ import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, HostLi
 import { NgGalleryImage } from '../../models/gallery.model';
 
 @Component({
-  selector: 'ngg-gallery-image',
-  templateUrl:'ng-gallery-image.component.html',
-  styleUrls: ['ng-gallery-image.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'ngg-gallery-image',
+    templateUrl: 'ng-gallery-image.component.html',
+    styleUrls: ['ng-gallery-image.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class NgGalleryImageComponent {
   @Input({ required: true }) image!: NgGalleryImage;

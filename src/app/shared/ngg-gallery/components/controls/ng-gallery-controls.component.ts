@@ -1,10 +1,11 @@
 import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
-  selector: 'ngg-gallery-controls',
-  templateUrl:'ng-gallery-controls.component.html',
-  styleUrls: ['ng-gallery-controls.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'ngg-gallery-controls',
+    templateUrl: 'ng-gallery-controls.component.html',
+    styleUrls: ['ng-gallery-controls.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class NgGalleryControlsComponent {
   @Input({ required: true }) currentIndex = 0;

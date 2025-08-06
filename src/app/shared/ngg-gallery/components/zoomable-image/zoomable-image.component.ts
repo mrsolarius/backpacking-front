@@ -13,10 +13,11 @@ interface ZoomState {
 }
 
 @Component({
-  selector: 'ngg-zoomable-image',
-  templateUrl: './zoomable-image.component.html',
-  styleUrls: ['./zoomable-image.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'ngg-zoomable-image',
+    templateUrl: './zoomable-image.component.html',
+    styleUrls: ['./zoomable-image.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class ZoomableImageComponent implements AfterViewInit, OnDestroy {
   @ViewChild('imageContainer') imageContainer!: ElementRef<HTMLDivElement>;

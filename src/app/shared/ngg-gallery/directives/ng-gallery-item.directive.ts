@@ -3,7 +3,8 @@ import { NgGalleryGroupDirective } from './ng-gallery-group.directive';
 import { NgGalleryImage } from '../models/gallery.model';
 
 @Directive({
-  selector: '[ngGalleryItem]',
+    selector: '[ngGalleryItem]',
+    standalone: false
 })
 export class NgGalleryItemDirective implements OnInit, OnDestroy {
   @Input() ngGalleryItem?: NgGalleryImage; // Image directe (optionnelle)

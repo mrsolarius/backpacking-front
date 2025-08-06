@@ -7,19 +7,18 @@ import { MatButtonModule } from '@angular/material/button';
 import { RouterModule } from '@angular/router';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [
-    RouterOutlet,
-    MatToolbarModule,
-    MatIconModule,
-    MatButtonModule,
-    RouterModule
-  ],
-  template: `
+    selector: 'app-root',
+    imports: [
+        RouterOutlet,
+        MatToolbarModule,
+        MatIconModule,
+        MatButtonModule,
+        RouterModule
+    ],
+    template: `
     <router-outlet></router-outlet>
   `,
-  styles: [`
+    styles: [`
     .spacer {
       flex: 1 1 auto;
     }

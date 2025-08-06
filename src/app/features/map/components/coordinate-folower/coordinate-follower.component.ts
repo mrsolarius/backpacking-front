@@ -27,16 +27,15 @@ import {ReverseGeocodingResponse} from "../../../../core/models/dto/geocoding.dt
 import {adaptHistoricalToCurrentFormat, isCurrentWeather} from "../../../../core/mappers/wether.mapper";
 
 @Component({
-  selector: 'app-coordinate-follower',
-  standalone: true,
-  imports: [
-    TimelineSliderComponent,
-    CoordinateInfoComponent,
-    WeatherDisplayComponent,
-    WeatherMetricsComponent,
-  ],
-  templateUrl: './coordinate-follower.component.html',
-  styleUrl: './coordinate-follower.component.scss'
+    selector: 'app-coordinate-follower',
+    imports: [
+        TimelineSliderComponent,
+        CoordinateInfoComponent,
+        WeatherDisplayComponent,
+        WeatherMetricsComponent,
+    ],
+    templateUrl: './coordinate-follower.component.html',
+    styleUrl: './coordinate-follower.component.scss'
 })
 export class CoordinateFollowerComponent implements OnInit, OnChanges, OnDestroy {
   @Input() travelId: number = 0;

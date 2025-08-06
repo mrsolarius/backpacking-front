@@ -6,16 +6,15 @@ import { MatCheckbox, MatCheckboxChange } from "@angular/material/checkbox";
 import { CameraFollow } from "../../models/camera-follow.enum";
 
 @Component({
-  selector: 'app-timeline-slider',
-  standalone: true,
-  imports: [
-    MatSlider,
-    MatSliderThumb,
-    FormsModule,
-    MatCheckbox,
-  ],
-  templateUrl:'timeline-slider.component.html',
-  styleUrls: ['timeline-slider.component.scss']
+    selector: 'app-timeline-slider',
+    imports: [
+        MatSlider,
+        MatSliderThumb,
+        FormsModule,
+        MatCheckbox,
+    ],
+    templateUrl: 'timeline-slider.component.html',
+    styleUrls: ['timeline-slider.component.scss']
 })
 export class TimelineSliderComponent {
   @Input() coordinates: CoordinateDto[] = [];

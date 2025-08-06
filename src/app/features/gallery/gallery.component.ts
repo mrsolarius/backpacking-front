@@ -16,18 +16,17 @@ import {NgGalleryModule} from "../../shared/ngg-gallery/ngg-gallery.module";
 import {NgGalleryGroupDirective} from "../../shared/ngg-gallery/directives/ng-gallery-group.directive";
 
 @Component({
-  selector: 'app-gallery',
-  standalone: true,
-  imports: [
-    AsyncPipe,
-    CommonModule,
-    MatIcon,
-    NgGalleryResponsiveImgComponent,
-    PictureDtoMapperPipe,
-    NgGalleryModule,
-  ],
-  templateUrl: './gallery.component.html',
-  styleUrl: './gallery.component.scss'
+    selector: 'app-gallery',
+    imports: [
+        AsyncPipe,
+        CommonModule,
+        MatIcon,
+        NgGalleryResponsiveImgComponent,
+        PictureDtoMapperPipe,
+        NgGalleryModule,
+    ],
+    templateUrl: './gallery.component.html',
+    styleUrl: './gallery.component.scss'
 })
 export class GalleryComponent implements OnInit {
   protected readonly storageURL = environment.baseApi;

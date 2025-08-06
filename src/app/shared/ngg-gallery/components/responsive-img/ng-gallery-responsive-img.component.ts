@@ -3,8 +3,8 @@ import { NgGalleryImage } from '../../models/gallery.model';
 import {ImageLoaderDirective} from "../../directives/image-loader.directive";
 
 @Component({
-  selector: 'ngg-responsive-img',
-  template: `
+    selector: 'ngg-responsive-img',
+    template: `
     <picture appImageLoader>
       @for (source of ngGalleryItem.sources || []; track source) {
         <source
@@ -20,7 +20,7 @@ import {ImageLoaderDirective} from "../../directives/image-loader.directive";
         loading="lazy">
     </picture>
   `,
-  styles: [`
+    styles: [`
     .ngg-responsive-img {
       width: 100%;
       height: 100%;
@@ -28,11 +28,10 @@ import {ImageLoaderDirective} from "../../directives/image-loader.directive";
       transition: transform 0.3s ease;
     }
   `],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
-  imports: [
-    ImageLoaderDirective
-  ]
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        ImageLoaderDirective
+    ]
 })
 export class NgGalleryResponsiveImgComponent {
   @Input({ required: true }) ngGalleryItem!: NgGalleryImage;
