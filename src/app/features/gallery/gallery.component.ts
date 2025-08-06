@@ -1,6 +1,6 @@
 // gallery.component.ts amélioré
-import { Component, EventEmitter, Inject, Input, OnInit, Output, PLATFORM_ID } from '@angular/core';
-import {AsyncPipe, CommonModule, DOCUMENT, isPlatformBrowser} from "@angular/common";
+import { Component, EventEmitter, Inject, Input, OnInit, Output, PLATFORM_ID, DOCUMENT } from '@angular/core';
+import {AsyncPipe, CommonModule, isPlatformBrowser} from "@angular/common";
 import { PictureCoordinateDTO } from "../../core/models/dto/images.dto";
 import { GalleryService } from "../../core/services/gallery.service";
 import { BehaviorSubject, Observable, distinctUntilChanged, map, switchMap } from "rxjs";

@@ -5,10 +5,11 @@ import {
   ApplicationRef,
   EnvironmentInjector,
   ComponentRef,
-  createComponent
+  createComponent,
+  DOCUMENT
 } from '@angular/core';
 import {NgGalleryComponent} from "../components/gallery/ng-gallery.component";
-import { DOCUMENT } from '@angular/common';
+
 
 @Injectable({
   providedIn: 'root'
