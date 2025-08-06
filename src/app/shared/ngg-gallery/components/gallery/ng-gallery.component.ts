@@ -1,4 +1,18 @@
-import { Component, OnInit, Input, AfterViewInit, HostListener, ElementRef, ChangeDetectionStrategy, ViewEncapsulation, DestroyRef, inject, effect, Signal } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  Input,
+  AfterViewInit,
+  HostListener,
+  ElementRef,
+  ChangeDetectionStrategy,
+  ViewEncapsulation,
+  DestroyRef,
+  inject,
+  effect,
+  Signal,
+  Inject, DOCUMENT
+} from '@angular/core';
 import { GalleryService } from '../../services/gallery.service';
 import { NgGalleryConfig, NgGalleryImage } from '../../models/gallery.model';
 
@@ -22,15 +36,15 @@ export class NgGalleryComponent implements OnInit, AfterViewInit {
   private touchEndX = 0;
   private swipeThreshold = 50; // Distance en px pour détecter un swipe
 
-  constructor(public galleryService: GalleryService) {
+  constructor(public galleryService: GalleryService,@Inject(DOCUMENT) private document: Document,) {
     // Utiliser effect pour réagir aux changements de l'état
     effect(() => {
       if (this.galleryService.isOpen()) {
         // Actions quand la galerie s'ouvre
-        document.body.classList.add('ngg-gallery-open');
+        this.document.body.classList.add('ngg-gallery-open');
       } else {
         // Actions quand la galerie se ferme
-        document.body.classList.remove('ngg-gallery-open');
+        this.document.body.classList.remove('ngg-gallery-open');
       }
     });
   }

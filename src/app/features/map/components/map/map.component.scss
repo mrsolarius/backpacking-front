@@ -1,5 +1,9 @@
-/* Optimisations CSS pour les marqueurs */
-/* map.component.scss */
+app-map {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
 
 #map {
   width: 100%;
