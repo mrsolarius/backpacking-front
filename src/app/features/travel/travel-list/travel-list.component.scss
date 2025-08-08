@@ -1,4 +1,4 @@
-.mat-card-image-container{
+.mat-card-image-container {
   height: 12rem;
   display: flex;
   align-items: center;
@@ -10,6 +10,11 @@
   padding: 1rem;
   max-width: 1200px;
   margin: 0 auto;
+}
+
+.travel-img {
+  display: flex;
+  max-height: 12rem;
 }
 
 .gallery-image {
