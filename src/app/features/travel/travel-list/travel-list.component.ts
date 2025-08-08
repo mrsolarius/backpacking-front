@@ -44,42 +44,15 @@ export class TravelListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    if (this.isBrowser) {
       this.travels$ = this.travelService.getAllTravels().pipe(
         map(travels =>
           travels.sort((a, b) => {
+
             const aDate = a.endDate?.getTime() ?? a.startDate.getTime();
             const bDate = b.endDate?.getTime() ?? b.startDate.getTime();
             return bDate-aDate;
           })
         )
       );
-    }
   }
-
-  getSrcSet(picture: PictureCoordinateDTO, deviceType: 'desktop' | 'tablet' | 'mobile'): string {
-    if (!picture?.versions?.[deviceType]) {
-      return '';
-    }
-
-    return picture.versions[deviceType]!
-      .map(v => `${environment.baseApi}${v.path} ${v.resolution}x`)
-      .join(', ');
-  }
-
-  getImageUrl(picture: PictureCoordinateDTO, type: 'thumbnail' | 'fullsize' = 'thumbnail'): string {
-    if (!picture || !picture.versions) {
-      return '';
-    }
-
-    if (type === 'fullsize') {
-      return `${environment.baseApi}${picture.path}`;
-    }
-
-    // Retourne l'URL de la version tablette avec résolution 1x par défaut
-    const tabletVersion = picture.versions.tablet?.[0];
-    return tabletVersion ? `${environment.baseApi}${tabletVersion.path}` : '';
-  }
-
-  protected readonly mapPictureCoordinateToNgGalleryImage = mapPictureCoordinateToNgGalleryImage;
 }
