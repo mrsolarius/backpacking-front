@@ -89,7 +89,7 @@ export class TravelService {
     // 1. Vérifier le transfer state (SSR)
     const stateData = this.transferState.get(transferKey, null);
     if (stateData) {
-      return of(stateData as TravelDTO[]);
+      return of(mapToTravelDTOList(stateData as unknown as TravelInputDTO[]));
     }
 
     return this.cacheService.get<TravelDTO[]>(cacheKey, this.CACHE_CONFIG).pipe(

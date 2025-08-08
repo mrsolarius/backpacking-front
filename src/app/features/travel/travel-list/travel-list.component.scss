@@ -1,12 +1,15 @@
+.mat-card-image-container{
+  height: 12rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+}
+
 .travel-list-container {
   padding: 1rem;
   max-width: 1200px;
   margin: 0 auto;
-}
-
-.travel-img{
-  max-height: 12rem;
-  display: flex;
 }
 
 .gallery-image {
