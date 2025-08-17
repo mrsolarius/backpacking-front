@@ -1,8 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
 import { from, Observable, of } from 'rxjs';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { CacheConfig, CacheEntry } from "../models/cache.model";
 import { ICacheService } from '../interfaces/cache-service.interface';
+import { TransferState } from '@angular/core';
+import { isPlatformServer } from '@angular/common';
+import {DateReviverHelper} from "../utils/date-reviver.helper";
 
 @Injectable()
 export class CacheService implements ICacheService {
@@ -11,7 +14,10 @@ export class CacheService implements ICacheService {
   private db: IDBDatabase | null = null;
   private dbReady: Promise<IDBDatabase>;
 
-  constructor() {
+  constructor(
+    private transferState: TransferState,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
     this.dbReady = this.initDatabase();
   }
 
@@ -106,11 +112,24 @@ export class CacheService implements ICacheService {
   }
 
   /**
-   * Récupère une entrée du cache
+   * Récupère une entrée du cache ou du transfer state (SSR)
    * @param key La clé de l'entrée
    * @param config Configuration du cache
+   * @param transferKey Clé optionnelle pour le transfer state (SSR)
    */
-  get<T>(key: string, config: CacheConfig): Observable<T | null> {
+  get<T>(key: string, config: CacheConfig, transferKey?: any): Observable<T | null> {
+    // 1. Vérifier le transfer state d'abord (côté client uniquement)
+    if (transferKey && !isPlatformServer(this.platformId)) {
+      const stateData = this.transferState.get(transferKey, null);
+      if (stateData) {
+        // Supprimer du transfer state après utilisation pour éviter la duplication
+        this.transferState.remove(transferKey);
+        const processedData = DateReviverHelper.reviveData(stateData);
+        return of(processedData);
+      }
+    }
+
+    // 2. Vérifier le cache IndexedDB
     return from(this.dbReady).pipe(
       switchMap(db => {
         return this.ensureStoreExists(config.storeName).pipe(
@@ -155,12 +174,13 @@ export class CacheService implements ICacheService {
   }
 
   /**
-   * Stocke une entrée dans le cache
+   * Stocke une entrée dans le cache et le transfer state (SSR)
    * @param key La clé de l'entrée
    * @param data Les données à stocker
    * @param config Configuration du cache
+   * @param transferKey Clé optionnelle pour le transfer state (SSR)
    */
-  set<T>(key: string, data: T, config: CacheConfig): Observable<T> {
+  set<T>(key: string, data: T, config: CacheConfig, transferKey?: any): Observable<T> {
     const now = Date.now();
     const expiresAt = now + config.ttl;
 
@@ -181,6 +201,11 @@ export class CacheService implements ICacheService {
               const request = store.put(entry);
 
               request.onsuccess = () => {
+                // Stocker dans le transfer state côté serveur
+                if (transferKey && isPlatformServer(this.platformId)) {
+                  this.transferState.set(transferKey, data);
+                }
+
                 observer.next(data);
                 observer.complete();
               };
@@ -233,6 +258,22 @@ export class CacheService implements ICacheService {
         return of(false);
       })
     );
+  }
+
+  /**
+   * Supprime une entrée du cache et du transfer state
+   * @param key La clé de l'entrée à supprimer
+   * @param storeName Le nom du store
+   * @param transferKey Clé optionnelle pour le transfer state
+   */
+  removeWithTransferState(key: string, storeName: string, transferKey?: any): Observable<boolean> {
+    // Supprimer du transfer state si fourni
+    if (transferKey) {
+      this.transferState.remove(transferKey);
+    }
+
+    // Supprimer du cache
+    return this.remove(key, storeName);
   }
 
   /**

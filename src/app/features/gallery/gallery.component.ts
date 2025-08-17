@@ -28,7 +28,7 @@ import {NgGalleryGroupDirective} from "../../shared/ngg-gallery/directives/ng-ga
     templateUrl: './gallery.component.html',
     styleUrl: './gallery.component.scss'
 })
-export class GalleryComponent implements OnInit {
+export class GalleryComponent {
   protected readonly storageURL = environment.baseApi;
   isBrowser: boolean;
 
@@ -75,10 +75,6 @@ export class GalleryComponent implements OnInit {
         this.updateSelectedIndex(selectedPhoto);
       }
     });
-  }
-
-  ngOnInit() {
-    // Pas besoin de vérifier isBrowser ici car on utilise déjà les observables
   }
 
   private updateSelectedIndex(photo: PictureCoordinateDTO): void {

@@ -1,4 +1,4 @@
-import { Provider } from '@angular/core';
+import {Provider, TransferState} from '@angular/core';
 import { isPlatformBrowser, isPlatformServer } from '@angular/common';
 import { PLATFORM_ID } from '@angular/core';
 import { CACHE_SERVICE } from '../tokens/cache.token';
@@ -12,18 +12,18 @@ export const CACHE_PROVIDERS: Provider[] = [
   // Service pour le navigateur SEULEMENT
   {
     provide: CacheService,
-    useFactory: (platformId: Object) => {
-      return isPlatformBrowser(platformId) ? new CacheService() : null;
+    useFactory: (platformId: Object, transferState: TransferState) => {
+      return isPlatformBrowser(platformId) ? new CacheService(transferState, platformId) : null;
     },
-    deps: [PLATFORM_ID]
+    deps: [PLATFORM_ID, TransferState]
   },
   // Service pour le serveur SEULEMENT
   {
     provide: SsrCacheService,
-    useFactory: (platformId: Object) => {
-      return isPlatformServer(platformId) ? new SsrCacheService() : null;
+    useFactory: (platformId: Object, transferState: TransferState) => {
+      return isPlatformServer(platformId) ? new SsrCacheService(transferState, platformId) : null;
     },
-    deps: [PLATFORM_ID]
+    deps: [PLATFORM_ID, TransferState]
   },
   // Factory pour le token CACHE_SERVICE
   {

@@ -1,4 +1,4 @@
-import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
+import {Injectable, StateKey} from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, map, retry, share, throwError, switchMap, of, tap } from 'rxjs';
 import {
@@ -12,7 +12,7 @@ import { CacheConfig } from "../models/cache.model";
 import { ICacheService } from "../interfaces/cache-service.interface";
 import { CACHE_SERVICE } from "../tokens/cache.token";
 import { TransferState, makeStateKey } from '@angular/core';
-import { isPlatformServer } from '@angular/common';
+import { Inject } from '@angular/core';
 
 @Injectable({
   providedIn: 'root'
@@ -30,9 +30,7 @@ export class GalleryService {
 
   constructor(
     private http: HttpClient,
-    @Inject(CACHE_SERVICE) private cacheService: ICacheService,
-    private transferState: TransferState,
-    @Inject(PLATFORM_ID) private platformId: Object
+    @Inject(CACHE_SERVICE) private cacheService: ICacheService
   ) {
     // Nettoyer les entrées expirées au démarrage du service
     this.cacheService.cleanExpiredEntries(this.CACHE_CONFIG.storeName).subscribe();
@@ -48,11 +46,11 @@ export class GalleryService {
   }
 
   // Méthodes pour générer les clés de transfer state
-  private getPicturesTransferKey(travelId: number): any {
+  private getPicturesTransferKey(travelId: number): StateKey<PictureCoordinateDTO[]> {
     return makeStateKey<PictureCoordinateDTO[]>(`travel-pictures-${travelId}`);
   }
 
-  private getPictureTransferKey(travelId: number, pictureId: number): any {
+  private getPictureTransferKey(travelId: number, pictureId: number): StateKey<PictureCoordinateDTO> {
     return makeStateKey<PictureCoordinateDTO>(`travel-picture-${travelId}-${pictureId}`);
   }
 
@@ -64,20 +62,14 @@ export class GalleryService {
     const cacheKey = this.getPicturesCacheKey(travelId);
     const transferKey = this.getPicturesTransferKey(travelId);
 
-    // 1. Vérifier le transfer state (SSR)
-    const stateData = this.transferState.get(transferKey, null);
-    if (stateData) {
-      return of(mapToPictureCoordinateDTO(stateData as unknown as PictureCoordinateInputDTO[]));
-    }
-
-    // 2. Vérifier le cache
-    return this.cacheService.get<PictureCoordinateDTO[]>(cacheKey, this.CACHE_CONFIG).pipe(
+    // Utiliser le cache service qui gère automatiquement le transfer state
+    return this.cacheService.get<PictureCoordinateDTO[]>(cacheKey, this.CACHE_CONFIG, transferKey).pipe(
       switchMap(cachedData => {
         if (cachedData) {
           return of(cachedData);
         }
 
-        // 3. Faire l'appel HTTP
+        // Faire l'appel HTTP
         return this.http.get<PictureCoordinateInputDTO[]>(`${this.API_URL}${travelId}/pictures`).pipe(
           retry(1), // Réessayer une fois en cas d'échec
           map(data => {
@@ -85,13 +77,7 @@ export class GalleryService {
             // Trier par date (du plus récent au plus ancien)
             return pictures.sort((a, b) => b.date.getTime() - a.date.getTime());
           }),
-          tap(pictures => {
-            // Stocker dans le transfer state côté serveur
-            if (isPlatformServer(this.platformId)) {
-              this.transferState.set(transferKey, pictures);
-            }
-          }),
-          switchMap(pictures => this.cacheService.set(cacheKey, pictures, this.CACHE_CONFIG)),
+          switchMap(pictures => this.cacheService.set(cacheKey, pictures, this.CACHE_CONFIG, transferKey)),
           catchError(this.handleError),
           share() // Partager la réponse entre plusieurs abonnés
         );
@@ -106,44 +92,28 @@ export class GalleryService {
     const cacheKey = this.getPictureCacheKey(travelId, pictureId);
     const transferKey = this.getPictureTransferKey(travelId, pictureId);
 
-    // 1. Vérifier le transfer state (SSR)
-    const stateData = this.transferState.get(transferKey, null);
-    if (stateData) {
-      return of(mapToPictureCoordinateDTO([stateData as unknown as PictureCoordinateInputDTO])[0]);
-    }
-
-    // 2. Vérifier le cache
-    return this.cacheService.get<PictureCoordinateDTO>(cacheKey, this.INDIVIDUAL_CACHE_CONFIG).pipe(
+    // Utiliser le cache service qui gère automatiquement le transfer state
+    return this.cacheService.get<PictureCoordinateDTO>(cacheKey, this.INDIVIDUAL_CACHE_CONFIG, transferKey).pipe(
       switchMap(cachedData => {
         if (cachedData) {
           return of(cachedData);
         }
 
-        // 3. D'abord, essayer de trouver dans le cache des photos du voyage
+        // D'abord, essayer de trouver dans le cache des photos du voyage
         return this.cacheService.get<PictureCoordinateDTO[]>(this.getPicturesCacheKey(travelId), this.CACHE_CONFIG).pipe(
           switchMap(cachedPictures => {
             if (cachedPictures) {
               const picture = cachedPictures.find(p => p.id === pictureId);
               if (picture) {
-                // Stocker dans le transfer state côté serveur
-                if (isPlatformServer(this.platformId)) {
-                  this.transferState.set(transferKey, picture);
-                }
                 // Mettre en cache cette photo individuelle
-                return this.cacheService.set(cacheKey, picture, this.INDIVIDUAL_CACHE_CONFIG);
+                return this.cacheService.set(cacheKey, picture, this.INDIVIDUAL_CACHE_CONFIG, transferKey);
               }
             }
 
-            // 4. Si non trouvé dans le cache, faire l'appel API
+            // Si non trouvé dans le cache, faire l'appel API
             return this.http.get<PictureCoordinateInputDTO>(`${this.API_URL}${travelId}/pictures/${pictureId}`).pipe(
               map(data => mapToPictureCoordinateDTO([data])[0]),
-              tap(picture => {
-                // Stocker dans le transfer state côté serveur
-                if (isPlatformServer(this.platformId)) {
-                  this.transferState.set(transferKey, picture);
-                }
-              }),
-              switchMap(picture => this.cacheService.set(cacheKey, picture, this.INDIVIDUAL_CACHE_CONFIG)),
+              switchMap(picture => this.cacheService.set(cacheKey, picture, this.INDIVIDUAL_CACHE_CONFIG, transferKey)),
               catchError(this.handleError)
             );
           })
@@ -203,15 +173,16 @@ export class GalleryService {
    * Invalide le cache pour un voyage spécifique
    */
   invalidateTravelPicturesCache(travelId: number): void {
-    // Supprimer le cache des photos du voyage
-    this.cacheService.remove(this.getPicturesCacheKey(travelId), this.CACHE_CONFIG.storeName).subscribe();
+    const transferKey = this.getPicturesTransferKey(travelId);
 
-    // Invalider le transfer state
-    this.invalidatePicturesTransferState(travelId);
+    // Supprimer le cache des photos du voyage avec transfer state
+    this.cacheService.removeWithTransferState(
+      this.getPicturesCacheKey(travelId),
+      this.CACHE_CONFIG.storeName,
+      transferKey
+    ).subscribe();
 
-    // Note: Pour une implémentation plus avancée, nous pourrions supprimer
-    // toutes les photos individuelles du cache, mais cela nécessiterait
-    // une méthode de cache qui supporte les patterns
+    // Nettoyer les entrées expirées
     this.cacheService.cleanExpiredEntries(this.CACHE_CONFIG.storeName).subscribe();
   }
 
@@ -219,11 +190,14 @@ export class GalleryService {
    * Invalide le cache d'une photo spécifique
    */
   invalidatePictureCache(travelId: number, pictureId: number): void {
-    // Supprimer la photo individuelle du cache
-    this.cacheService.remove(this.getPictureCacheKey(travelId, pictureId), this.CACHE_CONFIG.storeName).subscribe();
+    const transferKey = this.getPictureTransferKey(travelId, pictureId);
 
-    // Invalider le transfer state
-    this.transferState.remove(this.getPictureTransferKey(travelId, pictureId));
+    // Supprimer la photo individuelle du cache avec transfer state
+    this.cacheService.removeWithTransferState(
+      this.getPictureCacheKey(travelId, pictureId),
+      this.CACHE_CONFIG.storeName,
+      transferKey
+    ).subscribe();
   }
 
   /**
@@ -231,15 +205,14 @@ export class GalleryService {
    */
   invalidateAllCache(): void {
     this.cacheService.clearStore(this.CACHE_CONFIG.storeName).subscribe();
-    // Note: Il faudrait aussi nettoyer le transfer state, mais cela nécessiterait
-    // de connaître toutes les clés, ce qui n'est pas trivial
   }
 
   /**
    * Invalide le transfer state des photos d'un voyage
    */
   private invalidatePicturesTransferState(travelId: number): void {
-    this.transferState.remove(this.getPicturesTransferKey(travelId));
+    const transferKey = this.getPicturesTransferKey(travelId);
+    this.cacheService.removeWithTransferState('', '', transferKey).subscribe();
   }
 
   /**
@@ -266,9 +239,10 @@ export class GalleryService {
   private updateCacheWithNewPicture(travelId: number, newPicture: PictureCoordinateDTO): void {
     const picturesKey = this.getPicturesCacheKey(travelId);
     const pictureKey = this.getPictureCacheKey(travelId, newPicture.id);
+    const pictureTransferKey = this.getPictureTransferKey(travelId, newPicture.id);
 
     // Mettre en cache la nouvelle photo individuelle
-    this.cacheService.set(pictureKey, newPicture, this.INDIVIDUAL_CACHE_CONFIG).subscribe();
+    this.cacheService.set(pictureKey, newPicture, this.INDIVIDUAL_CACHE_CONFIG, pictureTransferKey).subscribe();
 
     // Mettre à jour le cache des photos du voyage
     this.cacheService.get<PictureCoordinateDTO[]>(picturesKey, this.CACHE_CONFIG).subscribe(cachedData => {
@@ -278,7 +252,8 @@ export class GalleryService {
           (a, b) => b.date.getTime() - a.date.getTime()
         );
 
-        this.cacheService.set(picturesKey, updatedData, this.CACHE_CONFIG).subscribe();
+        const picturesTransferKey = this.getPicturesTransferKey(travelId);
+        this.cacheService.set(picturesKey, updatedData, this.CACHE_CONFIG, picturesTransferKey).subscribe();
       }
     });
   }
@@ -293,7 +268,8 @@ export class GalleryService {
     this.cacheService.get<PictureCoordinateDTO[]>(picturesKey, this.CACHE_CONFIG).subscribe(cachedData => {
       if (cachedData) {
         const updatedData = cachedData.filter(p => p.id !== pictureId);
-        this.cacheService.set(picturesKey, updatedData, this.CACHE_CONFIG).subscribe();
+        const picturesTransferKey = this.getPicturesTransferKey(travelId);
+        this.cacheService.set(picturesKey, updatedData, this.CACHE_CONFIG, picturesTransferKey).subscribe();
       }
     });
   }

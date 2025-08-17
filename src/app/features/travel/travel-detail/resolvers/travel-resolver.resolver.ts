@@ -21,7 +21,7 @@ export const travelResolver: ResolveFn<TravelDTO | null> = (route, state) => {
   }
 
   // On délègue complètement la gestion du cache et du transfer state au service
-  return travelService.getTravelById(id, true).pipe(
+  return travelService.getTravelById(id, false).pipe(
     catchError(err => {
       console.error('Error fetching travel details:', err);
       return of(null);

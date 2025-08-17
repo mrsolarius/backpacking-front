@@ -1,11 +1,14 @@
-import { Injectable } from '@angular/core';
-import {Observable, of, switchMap} from 'rxjs';
+import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
+import { Observable, of, switchMap } from 'rxjs';
 import { CacheConfig, CacheEntry } from "../models/cache.model";
 import { ICacheService } from '../interfaces/cache-service.interface';
+import { TransferState } from '@angular/core';
+import { isPlatformServer } from '@angular/common';
+import {DateReviverHelper} from "../utils/date-reviver.helper";
 
 /**
  * Service de cache pour le Server-Side Rendering (SSR)
- * Implémente un cache en mémoire à l'aide de Map
+ * Implémente un cache en mémoire à l'aide de Map avec support du TransferState
  */
 @Injectable()
 export class SsrCacheService implements ICacheService {
@@ -21,7 +24,10 @@ export class SsrCacheService implements ICacheService {
     'map_cache'
   ];
 
-  constructor() {
+  constructor(
+    private transferState: TransferState,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
     // Initialiser les stores par défaut
     this.initDefaultStores();
   }
@@ -48,11 +54,12 @@ export class SsrCacheService implements ICacheService {
   }
 
   /**
-   * Récupère une entrée du cache
+   * Récupère une entrée du cache ou du transfer state (SSR)
    * @param key La clé de l'entrée
    * @param config Configuration du cache
+   * @param transferKey Clé optionnelle pour le transfer state (SSR)
    */
-  get<T>(key: string, config: CacheConfig): Observable<T | null> {
+  get<T>(key: string, config: CacheConfig, transferKey?: any): Observable<T | null> {
     return this.ensureStoreExists(config.storeName).pipe(
       switchMap(() => {
         const store = this.stores.get(config.storeName);
@@ -69,18 +76,21 @@ export class SsrCacheService implements ICacheService {
           return of(null);
         }
 
-        return of(entry.data);
+        // Reconvertir les dates si demandé
+        const processedData = DateReviverHelper.reviveData(entry.data);
+        return of(processedData);
       })
     );
   }
 
   /**
-   * Stocke une entrée dans le cache
+   * Stocke une entrée dans le cache et le transfer state (SSR)
    * @param key La clé de l'entrée
    * @param data Les données à stocker
    * @param config Configuration du cache
+   * @param transferKey Clé optionnelle pour le transfer state (SSR)
    */
-  set<T>(key: string, data: T, config: CacheConfig): Observable<T> {
+  set<T>(key: string, data: T, config: CacheConfig, transferKey?: any): Observable<T> {
     return this.ensureStoreExists(config.storeName).pipe(
       switchMap(() => {
         const now = Date.now();
@@ -96,6 +106,11 @@ export class SsrCacheService implements ICacheService {
         const store = this.stores.get(config.storeName);
         if (store) {
           store.set(key, entry);
+        }
+
+        // Stocker dans le transfer state côté serveur
+        if (transferKey && isPlatformServer(this.platformId)) {
+          this.transferState.set(transferKey, data);
         }
 
         return of(data);
@@ -114,6 +129,22 @@ export class SsrCacheService implements ICacheService {
 
     const result = store.delete(key);
     return of(result);
+  }
+
+  /**
+   * Supprime une entrée du cache et du transfer state
+   * @param key La clé de l'entrée à supprimer
+   * @param storeName Le nom du store
+   * @param transferKey Clé optionnelle pour le transfer state
+   */
+  removeWithTransferState(key: string, storeName: string, transferKey?: any): Observable<boolean> {
+    // Supprimer du transfer state si fourni
+    if (transferKey) {
+      this.transferState.remove(transferKey);
+    }
+
+    // Supprimer du cache
+    return this.remove(key, storeName);
   }
 
   /**
