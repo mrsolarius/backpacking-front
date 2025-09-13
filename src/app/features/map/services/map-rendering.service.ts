@@ -29,10 +29,17 @@ export class MapRenderingService implements IMapProvider {
         name: 'globe',
       },
       zoom: 1,
-      maxZoom: 20
+      maxZoom: 20,
     };
 
-    const mapOptions = { ...defaultOptions, ...options } as MapboxInitOptions;
+    const mapOptions = {
+      ...defaultOptions,
+      ...options,
+      attributionControl: false,
+      preserveDrawingBuffer: false,
+      renderWorldCopies: false,
+      antialias: false,
+    } as MapboxInitOptions;
 
     // Sauvegarder le style original pour la restauration
     this.originalStyle = mapOptions.style || defaultOptions.style;
