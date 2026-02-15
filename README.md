@@ -1,27 +1,78 @@
 # Backpacking
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.5.
+Application web Angular SSR pour préparer et explorer des voyages de backpacking.
 
-## Development server
+## Fonctionnalités (aperçu)
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+- Cartographie interactive et affichage de marqueurs.
+- Gestion/consultation de voyages et médias associés.
+- Consommation d’API externes (météo) et d’une API backend.
 
-## Code scaffolding
+## Démarrage local (dev)
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+```bash
+npm install
+npm run start
+```
 
-## Build
+Ouvre `http://localhost:4200/`.
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+## Build SSR
 
-## Running unit tests
+```bash
+npm run build
+npm run serve:ssr:backpacking
+```
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+Par défaut, le serveur SSR écoute sur `http://localhost:4001`.
 
-## Running end-to-end tests
+## Déploiement Docker (runtime env)
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+L’image lit ses variables au démarrage (pas besoin de rebuild).
 
-## Further help
+Variables supportées (runtime) :
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+- `BASE_API` : URL base pour les assets/back.
+- `API_URL` : URL de l’API (ex: `https://api.example.com/api`).
+- `MAP_TOKEN` : token Mapbox.
+- `WEATHER_API_KEY` : clé météo.
+- `PORT` : port d’écoute SSR (défaut `4001`).
+
+### Exemple docker-compose
+
+```yaml
+services:
+  web:
+    image: ghcr.io/<owner>/<repo>:latest
+    ports:
+      - "4001:4001"
+    environment:
+      - PORT=4001
+      - BASE_API=https://api.example.com
+      - API_URL=https://api.example.com/api
+      - MAP_TOKEN=pk.xxxxx
+      - WEATHER_API_KEY=xxxxx
+```
+
+### Exemple .env
+
+```dotenv
+BASE_API=https://api.example.com
+API_URL=https://api.example.com/api
+MAP_TOKEN=pk.xxxxx
+WEATHER_API_KEY=xxxxx
+```
+
+## Ajouter une variable d’environnement à l’avenir
+
+1) Ajouter la clé dans le runtime:
+- `scripts/runtime-env.mjs` : ajouter la variable dans `runtimeEnv`.
+
+2) Exposer la clé côté Angular:
+- `src/environments/environment.ts` et `src/environments/environment.development.ts` :
+  - étendre le type `RuntimeEnv`
+  - ajouter le fallback dans l’objet `environment`.
+
+3) Fournir la valeur au runtime:
+- Docker: ajouter la variable dans `docker-compose.yml` (section `environment`) ou dans un `.env`.
+- Local: export de variable `ENV_VAR=...` avant de lancer `npm run serve:ssr:backpacking`.
