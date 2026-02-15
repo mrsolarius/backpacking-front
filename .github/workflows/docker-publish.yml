@@ -6,6 +6,9 @@ on:
       - main
     tags:
       - v*
+  release:
+    types:
+      - published
 
 permissions:
   contents: read
@@ -39,7 +42,9 @@ jobs:
         id: image_tag
         shell: pwsh
         run: |
-          if ("${{ github.ref_type }}" -eq "tag") {
+          if ("${{ github.event_name }}" -eq "release") {
+            "tag=${{ github.event.release.tag_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          } elseif ("${{ github.ref_type }}" -eq "tag") {
             "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           } else {
             "tag=latest" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
