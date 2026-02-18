@@ -2,6 +2,7 @@ import {Component, Input, ChangeDetectionStrategy, Inject} from '@angular/core';
 import { NgGalleryImage } from '../../models/gallery.model';
 import {ImageLoaderDirective} from "../../directives/image-loader.directive";
 import {API_BASE_URL} from "../../../../core/tokens/api-base-url.token";
+import {environment} from "../../../../../environments/environment";
 
 @Component({
     selector: 'ngg-responsive-img',
@@ -59,6 +60,6 @@ export class NgGalleryResponsiveImgComponent {
   }
 
   getSrcset(srcset: any[]): string {
-    return srcset.map(item => `${this.apiBaseUrl}${item.src} ${item.resolution}x`).join(', ');
+    return srcset.map(item => `${environment.baseApi}${item.src} ${item.resolution}x`).join(', ');
   }
 }
