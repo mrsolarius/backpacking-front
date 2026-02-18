@@ -7,7 +7,6 @@ const outPath =
 
 const runtimeEnv = {
   BASE_API: process.env.BASE_API,
-  API_URL: process.env.API_URL,
   MAP_TOKEN: process.env.MAP_TOKEN,
   WEATHER_API_KEY: process.env.WEATHER_API_KEY,
 };

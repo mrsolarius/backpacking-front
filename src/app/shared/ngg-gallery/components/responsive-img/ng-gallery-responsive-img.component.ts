@@ -1,6 +1,7 @@
-import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
+import {Component, Input, ChangeDetectionStrategy, Inject} from '@angular/core';
 import { NgGalleryImage } from '../../models/gallery.model';
 import {ImageLoaderDirective} from "../../directives/image-loader.directive";
+import {API_BASE_URL} from "../../../../core/tokens/api-base-url.token";
 
 @Component({
     selector: 'ngg-responsive-img',
@@ -37,6 +38,8 @@ export class NgGalleryResponsiveImgComponent {
   @Input({ required: true }) ngGalleryItem!: NgGalleryImage;
   @Input() cssClassImg: string = '';
 
+  constructor(@Inject(API_BASE_URL) private apiBaseUrl: string){}
+
   getMediaQuery(source: any): string {
     if (source.media) {
       return source.media;
@@ -56,6 +59,6 @@ export class NgGalleryResponsiveImgComponent {
   }
 
   getSrcset(srcset: any[]): string {
-    return srcset.map(item => `${item.src} ${item.resolution}x`).join(', ');
+    return srcset.map(item => `${this.apiBaseUrl}${item.src} ${item.resolution}x`).join(', ');
   }
 }

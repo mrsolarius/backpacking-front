@@ -1,24 +1,23 @@
 import {Injectable, StateKey} from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, map, retry, share, throwError, switchMap, of, tap } from 'rxjs';
+import { Observable, catchError, map, retry, share, throwError, switchMap, of } from 'rxjs';
 import {
   PictureCoordinateDTO,
   PictureCoordinateInputDTO,
   mapToPictureCoordinateDTO
 } from '../models/dto/images.dto';
-import { environment } from '../../../environments/environment';
-import { CacheService } from './cache.service';
+import { API_BASE_URL } from '../tokens/api-base-url.token';
 import { CacheConfig } from "../models/cache.model";
 import { ICacheService } from "../interfaces/cache-service.interface";
 import { CACHE_SERVICE } from "../tokens/cache.token";
-import { TransferState, makeStateKey } from '@angular/core';
+import { makeStateKey } from '@angular/core';
 import { Inject } from '@angular/core';
 
 @Injectable({
   providedIn: 'root'
 })
 export class GalleryService {
-  private readonly API_URL = `${environment.apiUrl}/travels/`;
+  private readonly API_URL: string;
   private readonly CACHE_CONFIG: CacheConfig = {
     ttl: 5 * 60 * 1000, // 5 minutes
     storeName: 'gallery_cache'
@@ -30,8 +29,10 @@ export class GalleryService {
 
   constructor(
     private http: HttpClient,
+    @Inject(API_BASE_URL) private apiBaseUrl: string,
     @Inject(CACHE_SERVICE) private cacheService: ICacheService
   ) {
+    this.API_URL = `${this.apiBaseUrl}/api/travels/`;
     // Nettoyer les entrées expirées au démarrage du service
     this.cacheService.cleanExpiredEntries(this.CACHE_CONFIG.storeName).subscribe();
   }
@@ -274,3 +275,6 @@ export class GalleryService {
     });
   }
 }
+
+
+

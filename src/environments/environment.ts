@@ -1,6 +1,6 @@
 type RuntimeEnv = {
   BASE_API?: string;
-  API_URL?: string;
+  SSR_API_URL?: string;
   MAP_TOKEN?: string;
   WEATHER_API_KEY?: string;
 };
@@ -17,7 +17,7 @@ const readServerEnv = (): RuntimeEnv => {
 
   return {
     BASE_API: process.env['BASE_API'],
-    API_URL: process.env['API_URL'],
+    SSR_API_URL: process.env['SSR_API_URL'],
     MAP_TOKEN: process.env['MAP_TOKEN'],
     WEATHER_API_KEY: process.env['WEATHER_API_KEY'],
   };
@@ -30,10 +30,11 @@ const runtimeEnv: RuntimeEnv = {
 
 const fromEnv = (key: keyof RuntimeEnv, fallback: string) =>
   runtimeEnv[key] ?? fallback;
+const fromEnvOptional = (key: keyof RuntimeEnv) => runtimeEnv[key];
 
 export const environment = {
   baseApi: fromEnv('BASE_API', 'https://api.backpaking.louisvolat.fr'),
-  apiUrl: fromEnv('API_URL', 'https://api.backpaking.louisvolat.fr/api'),
+  ssrApiUrl: fromEnvOptional('SSR_API_URL'),
   mapToken: fromEnv(
     'MAP_TOKEN',
     'pk.eyJ1IjoibXJzb2xhcml1cyIsImEiOiJjbHY3c2hrNmMwMWQ3MmlwOHFobGlvMmpxIn0.KFI3ScxDxgP-ftyktLR3PA'

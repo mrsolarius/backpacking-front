@@ -1,7 +1,7 @@
 // src/app/core/services/map-data.service.ts
 import {Inject, Injectable} from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../environments/environment';
+import { API_BASE_URL } from '../tokens/api-base-url.token';
 import { CoordinateDto, CoordinateObjsDTO } from '../models/dto/coordinate.dto';
 import { map, Observable, share, switchMap, of } from 'rxjs';
 import {CacheConfig} from "../models/cache.model";
@@ -12,7 +12,7 @@ import {ICacheService} from "../interfaces/cache-service.interface";
   providedIn: 'root',
 })
 export class MapDataService {
-  private readonly API_URL = `${environment.apiUrl}/travels/`;
+  private readonly API_URL: string;
   private readonly CACHE_CONFIG: CacheConfig = {
     ttl: 15 * 60 * 1000, // 15 minutes en millisecondes
     storeName: 'map_cache'
@@ -20,8 +20,10 @@ export class MapDataService {
 
   constructor(
     private http: HttpClient,
+    @Inject(API_BASE_URL) private apiBaseUrl: string,
     @Inject(CACHE_SERVICE) private cacheService: ICacheService
   ) {
+    this.API_URL = `${this.apiBaseUrl}/api/travels/`;
     // Nettoyer les entrées expirées au démarrage du service
     this.cacheService.cleanExpiredEntries(this.CACHE_CONFIG.storeName).subscribe();
   }
@@ -135,3 +137,5 @@ export class MapDataService {
     });
   }
 }
+
+

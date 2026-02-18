@@ -1,19 +1,19 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, share, switchMap, of } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { API_BASE_URL } from '../tokens/api-base-url.token';
 import { TravelDTO, TravelInputDTO, mapToTravelDTO, mapToTravelDTOList } from '../models/dto/travel.dto';
 import { CacheConfig } from "../models/cache.model";
 import { CACHE_SERVICE } from "../tokens/cache.token";
 import { ICacheService } from "../interfaces/cache-service.interface";
-import { TransferState, makeStateKey } from '@angular/core';
+import { makeStateKey } from '@angular/core';
 import { Inject } from '@angular/core';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TravelService {
-  private readonly API_URL = environment.apiUrl + '/travels';
+  private readonly API_URL: string;
   private readonly CACHE_CONFIG: CacheConfig = {
     ttl: 10 * 60 * 1000, // 10 minutes
     storeName: 'travel_cache'
@@ -25,8 +25,10 @@ export class TravelService {
 
   constructor(
     private http: HttpClient,
+    @Inject(API_BASE_URL) private apiBaseUrl: string,
     @Inject(CACHE_SERVICE) private cacheService: ICacheService
   ) {
+    this.API_URL = `${this.apiBaseUrl}/api/travels`;
     this.cacheService.cleanExpiredEntries(this.CACHE_CONFIG.storeName).subscribe();
   }
 
@@ -198,3 +200,5 @@ export class TravelService {
     });
   }
 }
+
+

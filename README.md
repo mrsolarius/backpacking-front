@@ -30,14 +30,13 @@ Par défaut, le serveur SSR écoute sur `http://localhost:4001`.
 
 L’image lit ses variables au démarrage (pas besoin de rebuild).
 
-Variables supportées (runtime) :
+Variables supportees (runtime) :
 
-- `BASE_API` : URL base pour les assets/back.
-- `API_URL` : URL de l’API (ex: `https://api.example.com/api`).
-- `MAP_TOKEN` : token Mapbox.
-- `WEATHER_API_KEY` : clé météo.
-- `PORT` : port d’écoute SSR (défaut `4001`).
-
+- BASE_API : URL base du backend (sans /api).
+- SSR_API_URL : URL base du backend cote SSR (sans /api, optionnelle).
+- MAP_TOKEN : token Mapbox.
+- WEATHER_API_KEY : cle meteo.
+- PORT : port d'ecoute SSR (defaut 4001).
 ### Exemple docker-compose
 
 ```yaml
@@ -49,7 +48,7 @@ services:
     environment:
       - PORT=4001
       - BASE_API=https://api.example.com
-      - API_URL=https://api.example.com/api
+      - SSR_API_URL=https://api.example.com
       - MAP_TOKEN=pk.xxxxx
       - WEATHER_API_KEY=xxxxx
 ```
@@ -58,7 +57,7 @@ services:
 
 ```dotenv
 BASE_API=https://api.example.com
-API_URL=https://api.example.com/api
+SSR_API_URL=
 MAP_TOKEN=pk.xxxxx
 WEATHER_API_KEY=xxxxx
 ```
@@ -76,3 +75,5 @@ WEATHER_API_KEY=xxxxx
 3) Fournir la valeur au runtime:
 - Docker: ajouter la variable dans `docker-compose.yml` (section `environment`) ou dans un `.env`.
 - Local: export de variable `ENV_VAR=...` avant de lancer `npm run serve:ssr:backpacking`.
+
+
