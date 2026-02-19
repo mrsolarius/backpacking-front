@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { LngLat, LngLatBounds, Map as MapboxMap } from 'mapbox-gl';
+import type { LngLatBounds, LngLatBoundsLike, Map as MapboxMap } from 'mapbox-gl';
 import { IMapProvider, MapboxInitOptions, FitBoundsOptions, EaseToOptions, FogOptions } from '../interfaces/map-provider.interface';
 import { environment } from '../../../../environments/environment';
+import { MapboxModuleService } from './mapbox-module.service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,14 +14,13 @@ export class MapRenderingService implements IMapProvider {
   private originalStyle?: string;
   private lowPerformanceMode = false;
 
-  constructor() {}
-
+  constructor(private mapboxModule: MapboxModuleService) {}
   /**
    * Initialise la carte Mapbox dans le conteneur spécifié
    */
   async initialize(containerId: string, options?: MapboxInitOptions): Promise<MapboxMap> {
     // Dynamically import mapboxgl to ensure it's only loaded on the client side
-    const mapboxgl = (await import('mapbox-gl')).default;
+    const mapboxgl = await this.mapboxModule.load();
     mapboxgl.accessToken = environment.mapToken;
 
     const defaultOptions: MapboxInitOptions = {
@@ -139,7 +139,7 @@ export class MapRenderingService implements IMapProvider {
     }
 
     // Désactiver les animations
-    (this.map as any).transform.cameraEasing = (t: number) => 1; // Remplace l'animation par un déplacement immédiat
+    (this.map as any).transform.cameraEasing = () => 1; // Remplace l'animation par un déplacement immédiat
   }
 
   /**
@@ -182,7 +182,7 @@ export class MapRenderingService implements IMapProvider {
   /**
    * Ajuste la vue de la carte pour afficher les limites spécifiées
    */
-  fitBounds(bounds: LngLatBounds, options?: FitBoundsOptions): void {
+  fitBounds(bounds: LngLatBoundsLike, options?: FitBoundsOptions): void {
     if (!this.map) return;
 
     const defaultOptions: FitBoundsOptions = {
@@ -227,7 +227,7 @@ export class MapRenderingService implements IMapProvider {
    * Ajoute un terrain 3D à la carte
    */
   addTerrain(): void {
-    if (!this.map || this.lowPerformanceMode || this.map.getSource('mapbox-dem')!==undefined) return;
+    if (!this.map || this.lowPerformanceMode || this.map.getSource('mapbox-terrain')!==undefined) return;
 
 
     this.map.addSource('mapbox-terrain', {
@@ -254,6 +254,11 @@ export class MapRenderingService implements IMapProvider {
   onLoad(callback: () => void): void {
     if (!this.map) return;
     this.map.on('load', callback);
+  }
+
+  onError(callback: (error: any) => void) {
+    if (!this.map) return;
+    this.map.on('error', callback);
   }
 
   /**
@@ -293,9 +298,9 @@ export class MapRenderingService implements IMapProvider {
    */
   getBounds(): LngLatBounds {
     if (!this.map) {
-      return new LngLatBounds([-180, -90], [180, 90]); // Default world bounds
+      throw new Error('Map is not initialized.');
     }
-    return this.map.getBounds();
+    return this.map.getBounds() as LngLatBounds;
   }
 
   /**

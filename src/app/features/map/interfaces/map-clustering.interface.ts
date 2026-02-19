@@ -1,4 +1,4 @@
-import { Map as MapboxMap, LngLatBounds } from 'mapbox-gl';
+import type { LngLatBounds, Map as MapboxMap } from 'mapbox-gl';
 import { PictureCoordinateDTO } from '../../../core/models/dto/images.dto';
 
 export interface IMapClusteringService {

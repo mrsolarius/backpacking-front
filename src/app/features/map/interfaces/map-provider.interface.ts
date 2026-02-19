@@ -1,9 +1,9 @@
-import {LngLat, LngLatBounds, Map as MapboxMap, Projection} from 'mapbox-gl';
+import type { LngLatBounds, LngLatBoundsLike, LngLatLike, Map as MapboxMap, Projection } from 'mapbox-gl';
 
 export interface IMapProvider {
   initialize(containerId: string, options?: MapboxInitOptions): Promise<MapboxMap>;
   getMap(): MapboxMap | undefined;
-  fitBounds(bounds: LngLatBounds, options?: FitBoundsOptions): void;
+  fitBounds(bounds: LngLatBoundsLike, options?: FitBoundsOptions): void;
   easeTo(options: EaseToOptions): void;
   addSky(): void;
   addTerrain(): void;
@@ -24,6 +24,7 @@ export interface IMapProvider {
   // Méthodes pour l'optimisation du rendu
   optimizeForLowPerformance(): void;
   restorePerformance(): void;
+  onError(param: (error: any) => void): void;
 }
 
 export interface MapboxInitOptions {
@@ -41,7 +42,7 @@ export interface FitBoundsOptions {
 }
 
 export interface EaseToOptions {
-  center?: [number, number] | LngLat;
+  center?: LngLatLike;
   zoom?: number;
   duration?: number;
   pitch?: number;

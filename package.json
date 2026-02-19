@@ -1,6 +1,6 @@
 {
   "name": "backpacking",
-  "version": "1.0.2",
+  "version": "1.1.2",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -24,9 +24,9 @@
     "@angular/router": "^20.1.5",
     "@angular/service-worker": "^20.1.5",
     "@angular/ssr": "^20.1.4",
-    "@types/mapbox-gl": "^3.1.0",
+    "@types/mapbox-gl": "^3.4.1",
     "express": "^4.18.2",
-    "mapbox-gl": "^3.3.0",
+    "mapbox-gl": "^3.18.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.1"

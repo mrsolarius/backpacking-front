@@ -1,18 +1,17 @@
-import { Injectable } from '@angular/core';
-import { Map as MapboxMap, LngLatBounds } from 'mapbox-gl';
+import {Injectable} from '@angular/core';
+import type {GeoJSONSource, LngLatBounds, Map as MapboxMap} from 'mapbox-gl';
 import {IMapClusteringService} from "../interfaces/map-clustering.interface";
-import {MapMarkerService} from "./map-marker.service";
 import {PictureCoordinateDTO} from "../../../core/models/dto/images.dto";
 
 @Injectable({
   providedIn: 'root'
 })
 export class MapClusteringService implements IMapClusteringService {
-  private clusterSource?: mapboxgl.GeoJSONSource;
+  private clusterSource?: GeoJSONSource;
   private _isClustered = true;
   private map?: MapboxMap;
 
-  constructor(private markerService: MapMarkerService) {
+  constructor() {
   }
 
   /**
@@ -78,7 +77,7 @@ export class MapClusteringService implements IMapClusteringService {
     });
 
     // Récupérer la source pour une utilisation ultérieure
-    this.clusterSource = map.getSource('photos') as mapboxgl.GeoJSONSource;
+    this.clusterSource = map.getSource('photos') as GeoJSONSource;
 
     // Ajouter un gestionnaire de clic sur les clusters
     map.on('click', 'clusters', (e) => {
@@ -88,14 +87,14 @@ export class MapClusteringService implements IMapClusteringService {
       const clusterId = features[0].properties!['cluster_id'];
 
       // Zoomer sur le cluster cliqué
-      (map.getSource('photos') as mapboxgl.GeoJSONSource).getClusterExpansionZoom(
+      (map.getSource('photos') as GeoJSONSource).getClusterExpansionZoom(
         clusterId,
         (err, zoom) => {
           if (err) return;
 
           map.easeTo({
             center: (features[0].geometry as GeoJSON.Point).coordinates as [number, number],
-            zoom: zoom
+            zoom: zoom as number
           });
         }
       );
@@ -167,7 +166,7 @@ export class MapClusteringService implements IMapClusteringService {
 
     // Obtenir une liste des points dans la zone visible
     const visibleFeatures = this.map.queryRenderedFeatures(
-      undefined, // toute la zone visible
+      [0,0], // toute la zone visible
       {layers: ['clusters']} // uniquement les clusters
     );
 
@@ -195,14 +194,11 @@ export class MapClusteringService implements IMapClusteringService {
       if (clusterIds.has(photo.id)) return false;
 
       // Vérifier la distance aux autres photos pour détecter les photos isolées
-      const isIsolated = this.isPhotoIsolated(photo, zoom, allPhotos);
-
-      return isIsolated;
+      return this.isPhotoIsolated(photo, zoom, allPhotos);
     });
 
     // Récupérer les IDs des marqueurs existants
-    const existingIds = new Set(Object.keys(visibleMarkers).map(Number));
-
+    new Set(Object.keys(visibleMarkers).map(Number));
     // Supprimer les marqueurs qui ne sont plus isolés
     Object.keys(visibleMarkers).forEach(idStr => {
       const id = parseInt(idStr);

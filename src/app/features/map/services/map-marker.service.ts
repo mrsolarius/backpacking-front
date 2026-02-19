@@ -1,11 +1,12 @@
 import { Inject, Injectable, Optional } from '@angular/core';
-import { LngLat, Map as MapboxMap, Marker, Popup } from 'mapbox-gl';
+import type { LngLatLike, Map as MapboxMap, Marker, Popup } from 'mapbox-gl';
 import { IMapMarkerService, MarkerOptions } from '../interfaces/map-marker.interface';
 import { environment } from '../../../../environments/environment';
 import { PictureCoordinateDTO } from "../../../core/models/dto/images.dto";
 import { IMapMarkerPoolService } from '../interfaces/map-marker-pool.interface';
 import { MARKER_POOL_SERVICE } from '../tokens/map.token';
 import {MarkerElement} from "../models/marker-element.model";
+import { MapboxModuleService, MapboxGL } from './mapbox-module.service';
 
 
 @Injectable({
@@ -16,8 +17,13 @@ export class MapMarkerService implements IMapMarkerService {
   private isZooming = false;              // Indicateur de zoom actif
 
   constructor(
+    private mapboxModule: MapboxModuleService,
     @Optional() @Inject(MARKER_POOL_SERVICE) private markerPoolService?: IMapMarkerPoolService
   ) {}
+
+  private getMapbox(): MapboxGL {
+    return this.mapboxModule.getOrThrow();
+  }
 
   /**
    * Utilitaire pour ajouter un écouteur avec suivi
@@ -48,7 +54,8 @@ export class MapMarkerService implements IMapMarkerService {
    * Crée un marqueur Mapbox générique
    */
   createMarker(options: MarkerOptions): Marker {
-    return new Marker(options.element)
+    const mapboxgl = this.getMapbox();
+    return new mapboxgl.Marker(options.element)
       .setLngLat(options.coordinates);
   }
 
@@ -167,7 +174,7 @@ export class MapMarkerService implements IMapMarkerService {
   /**
    * Crée un marqueur personnalisé pour la position actuelle
    */
-  createMeMarker(coordinates: LngLat, map: MapboxMap): Marker {
+  createMeMarker(coordinates: LngLatLike, map: MapboxMap): Marker {
     // Simplement créer un nouvel élément directement pour le marqueur "me"
     const el = document.createElement('div');
     el.className = 'me-marker';
@@ -257,7 +264,8 @@ export class MapMarkerService implements IMapMarkerService {
     popupContent.appendChild(dateEl);
 
     // Créer et afficher le popup avec options optimisées
-    const popup = new Popup({
+    const mapboxgl = this.getMapbox();
+    const popup = new mapboxgl.Popup({
       closeButton: false,
       closeOnClick: false,
       maxWidth: '200px',

@@ -1,6 +1,5 @@
 import {
   Component,
-  ElementRef,
   EventEmitter,
   Inject,
   Input,
@@ -8,11 +7,10 @@ import {
   OnInit,
   Output,
   PLATFORM_ID,
-  ViewChild,
   ViewEncapsulation
 } from '@angular/core';
 import {isPlatformBrowser} from "@angular/common";
-import {LngLat, Map as MapboxMap, Marker, LngLatBounds} from "mapbox-gl";
+import type { LngLatBoundsLike, Map as MapboxMap, Marker } from "mapbox-gl";
 import {MatProgressSpinner} from "@angular/material/progress-spinner";
 import {Subscription} from "rxjs";
 import {PictureCoordinateDTO} from "../../../../core/models/dto/images.dto";
@@ -82,7 +80,7 @@ export class MapComponent implements OnInit, OnDestroy {
       if (this.meMarker) {
         this.animationService.animateMarkerMovement(
           this.meMarker,
-          new LngLat(value.longitude, value.latitude),
+          [value.longitude, value.latitude],
           500
         );
       }
@@ -139,6 +137,11 @@ export class MapComponent implements OnInit, OnDestroy {
         this.loadTravelData();
         this.mapProvider.addSky();
         this.mapProvider.addTerrain();
+      });
+
+      this.mapProvider.onError((error) => {
+        console.error('Erreur lors de l\'initialisation de la carte:', error);
+        this.isLoading = false;
       });
 
       this.mapProvider.onZoomEnd(this.handleZoomEnd.bind(this));
@@ -408,12 +411,24 @@ export class MapComponent implements OnInit, OnDestroy {
     this.allPhotos = [];
   }
 
-  private getBounds(coordinates: CoordinateDto[]): LngLatBounds {
-    const bounds = new LngLatBounds();
+  private getBounds(coordinates: CoordinateDto[]): LngLatBoundsLike {
+    let minLng = Infinity;
+    let minLat = Infinity;
+    let maxLng = -Infinity;
+    let maxLat = -Infinity;
+
     coordinates.forEach(coordinate => {
-      bounds.extend([coordinate.longitude, coordinate.latitude]);
+      minLng = Math.min(minLng, coordinate.longitude);
+      minLat = Math.min(minLat, coordinate.latitude);
+      maxLng = Math.max(maxLng, coordinate.longitude);
+      maxLat = Math.max(maxLat, coordinate.latitude);
     });
-    return bounds;
+
+    if (!isFinite(minLng) || !isFinite(minLat) || !isFinite(maxLng) || !isFinite(maxLat)) {
+      return [[-180, -90], [180, 90]];
+    }
+
+    return [[minLng, minLat], [maxLng, maxLat]];
   }
 
   private addIconAtLastCoordinate(coordinates: CoordinateDto[]) {
@@ -422,7 +437,7 @@ export class MapComponent implements OnInit, OnDestroy {
     const lastCoordinate = coordinates[coordinates.length - 1];
     try {
       this.meMarker = this.markerService.createMeMarker(
-        new LngLat(lastCoordinate.longitude, lastCoordinate.latitude),
+        [lastCoordinate.longitude, lastCoordinate.latitude],
         this.map
       );
     } catch (error) {
