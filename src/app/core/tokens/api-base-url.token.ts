@@ -2,7 +2,8 @@ import { InjectionToken, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser, isPlatformServer } from '@angular/common';
 import { environment } from '../../../environments/environment';
 
-const normalizeApiBaseUrl = (url: string): string => {
+const normalizeApiBaseUrl = (url?: string): string => {
+  if (!url) return '';
   const trimmed = url.replace(/\/+$/, '');
   return trimmed.endsWith('/api') ? trimmed.slice(0, -4) : trimmed;
 };
